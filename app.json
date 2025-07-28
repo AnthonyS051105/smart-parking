@@ -1,4 +1,31 @@
 {
-  "name": "SmartParking",
-  "slug": "SmartParking"
+  "expo": {
+    "name": "SmartParking",
+    "slug": "SmartParking",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icons/465abb021f7ccecbf70e8303bed15887815b29fb.png",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/icons/465abb021f7ccecbf70e8303bed15887815b29fb.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "assetBundlePatterns": ["**/*"],
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/icons/465abb021f7ccecbf70e8303bed15887815b29fb.png",
+        "backgroundColor": "#ffffff"
+      }
+    },
+    "web": {
+      "bundler": "metro",
+      "entryPoint": "./src/app/App.js"
+    },
+    "scheme": "easyparking",
+    "plugins": ["expo-font", "expo-router"]
+  }
 }
