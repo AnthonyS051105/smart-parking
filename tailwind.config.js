@@ -3,6 +3,7 @@ module.exports = {
   // NOTE: Update this to include the paths to all files that contain Nativewind classes.
   content: [
     "./app/**/*.{js,jsx,ts,tsx}",
+    "./components/**/*.{js,jsx,ts,tsx}", // ✅ Tambahkan components folder
     "./App.{js,jsx,ts,tsx}", // opsional jika file App.js masih di root
   ],
   presets: [require("nativewind/preset")],
@@ -15,11 +16,22 @@ module.exports = {
           dark: "#5B9396", // Dark green
           text: "#CEF1F3",
         },
-        secondary: {
-          light: "#FBBF24", // Light yellow
-          DEFAULT: "#F59E0B", // Default yellow
-          dark: "#D97706", // Dark yellow
-        },
+      },
+      fontFamily: {
+        // ✅ Tambahkan font family mapping untuk NativeWind
+        thin: ["Poppins-Thin"],
+        light: ["Poppins-Light"],
+        normal: ["Poppins-Regular"],
+        medium: ["Poppins-Medium"],
+        semibold: ["Poppins-SemiBold"],
+        bold: ["Poppins-Bold"],
+        extrabold: ["Poppins-ExtraBold"],
+        black: ["Poppins-Black"],
+      },
+      spacing: {
+        // ✅ Tambahkan spacing khusus jika diperlukan
+        18: "4.5rem",
+        88: "22rem",
       },
     },
   },
