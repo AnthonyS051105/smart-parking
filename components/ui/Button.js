@@ -1,5 +1,5 @@
 import React from "react";
-import { TouchableOpacity, Text, View } from "react-native";
+import { TouchableOpacity, Text, View, Dimensions } from "react-native";
 import { cn } from "../../utils/cn";
 import {
   getResponsiveFontSize,
@@ -7,9 +7,8 @@ import {
 } from "../../utils/responsive";
 import { SHADOWS, COLORS } from "../../utils/styles";
 
-/**
- * Button component dengan styling yang sama seperti CustomButton
- */
+const { width: screenWidth } = Dimensions.get("window");
+
 export default function Button({
   title,
   onPress,
@@ -21,14 +20,14 @@ export default function Button({
   fullWidth = true,
   textStyle = {},
   style = {},
-  fontFamily = "Poppins-Bold",
+  fontFamily = "Poppins-SemiBold",
   ...props
 }) {
   const getFontSize = () => {
     const baseSizes = {
-      sm: 14,
-      md: 16,
-      lg: 18,
+      sm: screenWidth * 0.018,
+      md: screenWidth * 0.038,
+      lg: screenWidth * 0.058,
     };
     return getResponsiveFontSize(baseSizes[size]);
   };
@@ -52,13 +51,17 @@ export default function Button({
       opacity: disabled ? 0.6 : 1,
     };
 
-    // Pilih shadow berdasarkan size dan variant
     const getShadow = () => {
       if (variant === "outline" || variant === "ghost") return {};
 
-      if (size === "lg") return SHADOWS.buttonLarge;
-      if (variant === "primary") return SHADOWS.buttonElevated;
-      return SHADOWS.button;
+      // Shadow sesuai gambar: X=0, Y=4, Blur=4.8, Spread=0, #000000 25%
+      return {
+        shadowColor: "#000000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.25,
+        shadowRadius: 4.8,
+        elevation: 8,
+      };
     };
 
     switch (variant) {
@@ -66,6 +69,13 @@ export default function Button({
         return {
           ...baseStyle,
           backgroundColor: COLORS.primary.DEFAULT,
+          ...getShadow(),
+        };
+      case "identity":
+        return {
+          ...baseStyle,
+          backgroundColor: "#DDF8FB", // Warna button sesuai spesifikasi
+          borderRadius: 50,
           ...getShadow(),
         };
       case "secondary":
@@ -96,7 +106,7 @@ export default function Button({
       fontSize: getFontSize(),
       fontFamily,
       textAlign: "center",
-      letterSpacing: 0.5,
+      letterSpacing: 0, // 0% letter spacing
     };
 
     switch (variant) {
@@ -104,7 +114,17 @@ export default function Button({
         return {
           ...baseTextStyle,
           color: COLORS.text.primary,
-          ...SHADOWS.text,
+          // Shadow sesuai gambar untuk text
+          textShadowColor: "rgba(0, 0, 0, 0.25)",
+          textShadowOffset: { width: 0, height: 4 },
+          textShadowRadius: 4.8,
+        };
+      case "identity":
+        return {
+          ...baseTextStyle,
+          color: "#2D2B2E",
+          fontFamily: "Poppins-Bold",
+          fontWeight: "700",
         };
       case "secondary":
         return {
@@ -116,7 +136,9 @@ export default function Button({
         return {
           ...baseTextStyle,
           color: COLORS.text.white,
-          ...SHADOWS.text,
+          textShadowColor: "rgba(0, 0, 0, 0.25)",
+          textShadowOffset: { width: 0, height: 4 },
+          textShadowRadius: 4.8,
         };
       default:
         return baseTextStyle;

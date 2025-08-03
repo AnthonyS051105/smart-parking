@@ -1,147 +1,72 @@
 import React from "react";
 import { View, Dimensions } from "react-native";
-import { cn } from "../../utils/cn";
 
-const { width: screenWidth } = Dimensions.get("window");
+const { width: screenWidth, height: screenHeight } = Dimensions.get("window");
 
-/**
- * DecorativeCircles component dengan NativeWind styling
- *
- * Props:
- * - variant: "bottom-right" | "top-left" | "scattered" | "top-left-light" - Posisi circles
- * - opacity: number - Opacity circles (0-1)
- * - className: string - Custom classes
- */
-export default function DecorativeCircles({
-  opacity = 0.4,
-  variant = "bottom-right",
-  className = "",
-}) {
-  const baseCircleClasses = [
-    "absolute",
-    "rounded-full",
-    "bg-blue-600/30", // semi-transparent blue
-  ];
-
-  const getCircleSize = (multiplier) => ({
-    width: screenWidth * multiplier,
-    height: screenWidth * multiplier,
-  });
-
-  const renderBottomRightCircles = () => (
-    <>
-      <View
-        className={cn([...baseCircleClasses, className])}
-        style={{
-          ...getCircleSize(0.5),
-          right: -screenWidth * 0.28,
-          bottom: -screenWidth * 0.1,
-          opacity,
-        }}
-      />
-      <View
-        className={cn([...baseCircleClasses, className])}
-        style={{
-          ...getCircleSize(0.4),
-          right: -screenWidth * 0.001,
-          bottom: -screenWidth * 0.3,
-          opacity,
-        }}
-      />
-    </>
-  );
-
-  const renderTopLeftCircles = () => (
-    <>
-      <View
-        className={cn([...baseCircleClasses, className])}
-        style={{
-          ...getCircleSize(0.4),
-          left: -screenWidth * 0.2,
-          top: -screenWidth * 0.1,
-          opacity,
-        }}
-      />
-      <View
-        className={cn([...baseCircleClasses, className])}
-        style={{
-          ...getCircleSize(0.3),
-          left: -screenWidth * 0.05,
-          top: -screenWidth * 0.2,
-          opacity,
-        }}
-      />
-    </>
-  );
-
-  const renderTopLeftLightCircles = () => (
-    <>
-      <View
-        className={cn([...baseCircleClasses, "bg-white/10", className])}
-        style={{
-          ...getCircleSize(0.35),
-          left: -screenWidth * 0.18,
-          top: -screenWidth * 0.08,
-          opacity,
-        }}
-      />
-      <View
-        className={cn([...baseCircleClasses, "bg-white/10", className])}
-        style={{
-          ...getCircleSize(0.25),
-          left: -screenWidth * 0.03,
-          top: -screenWidth * 0.15,
-          opacity,
-        }}
-      />
-    </>
-  );
-
-  const renderScatteredCircles = () => (
-    <>
-      <View
-        className={cn([...baseCircleClasses, className])}
-        style={{
-          ...getCircleSize(0.3),
-          right: -screenWidth * 0.15,
-          top: screenWidth * 0.1,
-          opacity,
-        }}
-      />
-      <View
-        className={cn([...baseCircleClasses, className])}
-        style={{
-          ...getCircleSize(0.25),
-          left: -screenWidth * 0.1,
-          top: screenWidth * 0.3,
-          opacity,
-        }}
-      />
-      <View
-        className={cn([...baseCircleClasses, className])}
-        style={{
-          ...getCircleSize(0.2),
-          right: -screenWidth * 0.05,
-          bottom: screenWidth * 0.4,
-          opacity,
-        }}
-      />
-    </>
-  );
+export default function DecorativeCircles({ variant = "default" }) {
+  // Shadow sesuai gambar: X=0, Y=4, Blur=4.8, Spread=0, #000000 25%
+  const circleShadow = {
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4.8,
+    elevation: 8,
+  };
 
   const renderCircles = () => {
     switch (variant) {
       case "top-left":
-        return renderTopLeftCircles();
-      case "top-left-light":
-        return renderTopLeftLightCircles();
-      case "scattered":
-        return renderScatteredCircles();
+        return (
+          <View className="absolute inset-0 opacity-40">
+            <View
+              className="absolute bg-primary-light rounded-full"
+              style={{
+                width: screenWidth * 0.5,
+                height: screenWidth * 0.5,
+                left: screenWidth * 0.13,
+                top: -screenWidth * 0.25,
+              }}
+            />
+            <View
+              className="absolute bg-primary-light rounded-full"
+              style={{
+                width: screenWidth * 0.5,
+                height: screenWidth * 0.5,
+                left: -screenWidth * 0.2,
+                top: -screenWidth * 0.15,
+              }}
+            />
+          </View>
+        );
+
       case "bottom-right":
+        return (
+          <View className="absolute inset-0 opacity-40">
+            <View
+              className="absolute bg-primary-dark rounded-full"
+              style={{
+                width: screenWidth * 0.5,
+                height: screenWidth * 0.5,
+                right: -screenWidth * 0.28,
+                bottom: -screenWidth * 0.1,
+              }}
+            />
+            <View
+              className="absolute bg-primary-dark rounded-full"
+              style={{
+                width: screenWidth * 0.5,
+                height: screenWidth * 0.5,
+                right: -screenWidth * 0.001,
+                bottom: -screenWidth * 0.3,
+              }}
+            />
+          </View>
+        );
+
       default:
-        return renderBottomRightCircles();
+        return null;
     }
   };
 
-  return <>{renderCircles()}</>;
+  return renderCircles();
 }

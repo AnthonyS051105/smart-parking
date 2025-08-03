@@ -12,6 +12,7 @@ export const usePoppins = () => {
     "Poppins-Medium": require("../assets/fonts/Poppins/Poppins-Medium.ttf"),
     "Poppins-SemiBold": require("../assets/fonts/Poppins/Poppins-SemiBold.ttf"),
     "Poppins-Bold": require("../assets/fonts/Poppins/Poppins-Bold.ttf"),
+    "Poppins-ExtraBold": require("../assets/fonts/Poppins/Poppins-ExtraBold.ttf"),
   });
 
   useEffect(() => {

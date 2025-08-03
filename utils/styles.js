@@ -1,105 +1,57 @@
 // Shadow styles untuk berbagai komponen
 export const SHADOWS = {
-  // Shadow untuk button
+  // Shadow sesuai gambar: X=0, Y=4, Blur=4.8, Spread=0, #000000 25%
   button: {
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
-    shadowRadius: 8,
+    shadowRadius: 4.8,
     elevation: 8,
   },
 
-  // Shadow untuk button yang elevated/primary
   buttonElevated: {
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 6,
-    },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-    elevation: 10,
-  },
-
-  // Shadow untuk button large
-  buttonLarge: {
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 8,
-    },
-    shadowOpacity: 0.35,
-    shadowRadius: 12,
-    elevation: 12,
-  },
-
-  // Shadow untuk logo/image - REMOVED SHADOW
-  logo: {
-    // Shadow dihapus sesuai permintaan
-  },
-
-  // Shadow untuk text/title
-  text: {
-    textShadowColor: "rgba(0, 0, 0, 0.3)",
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 4,
-  },
-
-  // Shadow untuk text yang lebih prominent
-  textTitle: {
-    textShadowColor: "rgba(0, 0, 0, 0.5)",
-    textShadowOffset: { width: 0, height: 3 },
-    textShadowRadius: 6,
-  },
-
-  // Shadow untuk card/container
-  card: {
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4.8,
     elevation: 8,
   },
 
-  // Shadow untuk card dengan efek glass
-  cardGlass: {
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 6,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 10,
-    elevation: 10,
-  },
-
-  // Shadow untuk card elevated
-  cardElevated: {
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 8,
-    },
+  buttonLarge: {
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
-    shadowRadius: 12,
-    elevation: 12,
+    shadowRadius: 4.8,
+    elevation: 8,
   },
 
-  // Shadow untuk input field
+  // Shadow untuk text sesuai gambar
+  text: {
+    textShadowColor: "rgba(0, 0, 0, 0.25)",
+    textShadowOffset: { width: 0, height: 4 },
+    textShadowRadius: 4.8,
+  },
+
+  textTitle: {
+    textShadowColor: "rgba(0, 0, 0, 0.25)",
+    textShadowOffset: { width: 0, height: 4 },
+    textShadowRadius: 4.8,
+  },
+
+  // Other shadows...
+  card: {
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4.8,
+    elevation: 8,
+  },
+
   input: {
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowColor: "#000000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4.8,
     elevation: 4,
   },
 };
@@ -126,15 +78,5 @@ export const COLORS = {
     secondary: "#6B7280",
     white: "#FFFFFF",
     placeholder: "#9CA3AF",
-  },
-  error: {
-    DEFAULT: "#EF4444",
-    light: "#FCA5A5",
-    dark: "#DC2626",
-  },
-  success: {
-    DEFAULT: "#10B981",
-    light: "#6EE7B7",
-    dark: "#059669",
   },
 };
