@@ -71,7 +71,6 @@ export default function Logo({
       color: textColor,
       fontSize: fontSize,
       fontFamily: "Poppins-ExtraBold",
-      fontWeight: "800",
       textAlign: "center",
       letterSpacing: 0,
       lineHeight: fontSize * 1.2, // Diperbesar dari 1.0 ke 1.2 untuk memberikan ruang lebih

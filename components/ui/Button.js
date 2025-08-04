@@ -25,9 +25,9 @@ export default function Button({
 }) {
   const getFontSize = () => {
     const baseSizes = {
-      sm: screenWidth * 0.018,
+      sm: screenWidth * 0.032,
       md: screenWidth * 0.038,
-      lg: screenWidth * 0.058,
+      lg: screenWidth * 0.04,
     };
     return getResponsiveFontSize(baseSizes[size]);
   };
@@ -113,18 +113,8 @@ export default function Button({
       case "primary":
         return {
           ...baseTextStyle,
-          color: COLORS.text.primary,
-          // Shadow sesuai gambar untuk text
-          textShadowColor: "rgba(0, 0, 0, 0.25)",
-          textShadowOffset: { width: 0, height: 4 },
-          textShadowRadius: 4.8,
-        };
-      case "identity":
-        return {
-          ...baseTextStyle,
           color: "#2D2B2E",
-          fontFamily: "Poppins-Bold",
-          fontWeight: "700",
+          fontFamily: "Poppins-ExtraBold",
         };
       case "secondary":
         return {
@@ -136,9 +126,7 @@ export default function Button({
         return {
           ...baseTextStyle,
           color: COLORS.text.white,
-          textShadowColor: "rgba(0, 0, 0, 0.25)",
-          textShadowOffset: { width: 0, height: 4 },
-          textShadowRadius: 4.8,
+          fontFamily: "Poppins-ExtraBold",
         };
       default:
         return baseTextStyle;

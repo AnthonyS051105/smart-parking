@@ -33,46 +33,40 @@ export default function Status() {
       <HeaderNavigation title="User" />
 
       {/* Main Content */}
-      <View
-        style={{
-          flex: 1,
-          justifyContent: "center",
-          alignItems: "center",
-          paddingHorizontal: padding,
-          paddingBottom: desktop ? 80 : 40,
-        }}
-      >
+      <View className="flex-1 justify-center items-center px-8">
         <Logo
           size={desktop ? "md" : "lg"}
           showText={true}
-          className="mb-16"
           style={{
-            marginBottom: desktop ? 60 : 80,
+            marginBottom: desktop ? 40 : 60, // Dikurangi
           }}
         />
-      </View>
 
-      {/* Bottom Section */}
-      <View
-        style={{
-          paddingHorizontal: padding,
-          paddingBottom: padding,
-          gap: 16,
-        }}
-      >
-        <Button
-          title="GET STARTED"
-          onPress={handleGetStarted}
-          variant="primary"
-          size="lg"
-        />
+        {/* Bottom Section */}
+        <View
+          className="w-full space-y-5 px-4 mt-24"
+          style={{
+            paddingHorizontal: padding,
+            paddingBottom: padding,
+            gap: 12, // Dikurangi dari 16
+          }}
+        >
+          <Button
+            title="GET STARTED"
+            onPress={handleGetStarted}
+            className="rounded-full py-4"
+            variant="primary"
+            size="md"
+          />
 
-        <Button
-          title="I ALREADY HAVE AN ACCOUNT"
-          onPress={handleAlreadyHaveAccount}
-          variant="ghost"
-          size="md"
-        />
+          <Button
+            title="I ALREADY HAVE AN ACCOUNT"
+            onPress={handleAlreadyHaveAccount}
+            className="rounded-full py-4"
+            variant="ghost"
+            size="md"
+          />
+        </View>
       </View>
     </GradientBackground>
   );
