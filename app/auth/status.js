@@ -44,7 +44,7 @@ export default function Status() {
 
         {/* Bottom Section */}
         <View
-          className="w-full space-y-5 px-4 mt-24"
+          className="w-full space-y-5 px-4 mt-32"
           style={{
             paddingHorizontal: padding,
             paddingBottom: padding,

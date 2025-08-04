@@ -52,7 +52,7 @@ export default function Identitas() {
               title="User"
               onPress={handleUserLogin}
               className="rounded-full py-4"
-              variant="primary"
+              variant="identity"
               size="md"
             />
 
@@ -60,7 +60,7 @@ export default function Identitas() {
               title="Administrator"
               onPress={handleAdminLogin}
               className="rounded-full py-4 mt-4"
-              variant="primary"
+              variant="identity"
               size="md"
             />
           </View>

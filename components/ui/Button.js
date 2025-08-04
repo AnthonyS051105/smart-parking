@@ -116,6 +116,12 @@ export default function Button({
           color: "#2D2B2E",
           fontFamily: "Poppins-ExtraBold",
         };
+      case "identity":
+        return {
+          ...baseTextStyle,
+          color: "#2D2B2E",
+          fontFamily: "Poppins-Bold",
+        };
       case "secondary":
         return {
           ...baseTextStyle,
