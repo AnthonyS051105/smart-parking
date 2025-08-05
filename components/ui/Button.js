@@ -21,11 +21,12 @@ export default function Button({
   textStyle = {},
   style = {},
   fontFamily = "Poppins-SemiBold",
+  borderRadius,
   ...props
 }) {
   const getFontSize = () => {
     const baseSizes = {
-      sm: screenWidth * 0.032,
+      sm: screenWidth * 0.035,
       md: screenWidth * 0.038,
       lg: screenWidth * 0.04,
     };
@@ -45,7 +46,7 @@ export default function Button({
     const baseStyle = {
       paddingVertical: getPadding(),
       paddingHorizontal: getPadding() * 1.5,
-      borderRadius: 25,
+      borderRadius: borderRadius !== undefined ? borderRadius : 25,
       alignItems: "center",
       justifyContent: "center",
       opacity: disabled ? 0.6 : 1,
@@ -75,13 +76,19 @@ export default function Button({
         return {
           ...baseStyle,
           backgroundColor: "#DDF8FB", // Warna button sesuai spesifikasi
-          borderRadius: 50,
+          borderRadius: borderRadius !== undefined ? borderRadius : 50,
           ...getShadow(),
         };
       case "secondary":
         return {
           ...baseStyle,
           backgroundColor: COLORS.background.card,
+          ...getShadow(),
+        };
+      case "signup":
+        return {
+          ...baseStyle,
+          backgroundColor: COLORS.background.signupButton,
           ...getShadow(),
         };
       case "outline":
@@ -125,7 +132,14 @@ export default function Button({
       case "secondary":
         return {
           ...baseTextStyle,
-          color: COLORS.text.primary,
+          color: COLORS.text.signup,
+          fontFamily: "Poppins-SemiBold",
+        };
+      case "signup":
+        return {
+          ...baseTextStyle,
+          color: COLORS.text.white,
+          fontFamily: "Poppins-ExtraBold",
         };
       case "outline":
       case "ghost":
@@ -148,8 +162,16 @@ export default function Button({
       className={className}
       {...props}
     >
-      {icon && icon}
-      <Text style={[getTextStyle(), textStyle]}>{title}</Text>
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        {icon && icon}
+        <Text style={[getTextStyle(), textStyle]}>{title}</Text>
+      </View>
     </TouchableOpacity>
   );
 }

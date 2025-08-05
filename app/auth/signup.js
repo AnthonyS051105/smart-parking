@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { View, Text, ScrollView, Alert } from "react-native";
+import { View, Text, ScrollView, Alert, Image } from "react-native";
 import { useRouter } from "expo-router";
 import { useAuth } from "../../contexts/AuthContext";
 import {
@@ -35,7 +35,7 @@ export default function SignUp() {
 
   const router = useRouter();
   const { signup } = useAuth();
-  const padding = getResponsivePadding(20);
+  const padding = getResponsivePadding(22);
   const desktop = isDesktop();
 
   // ✅ Define validation rules with proper format
@@ -114,7 +114,7 @@ export default function SignUp() {
   return (
     <GradientBackground>
       {/* Decorative Circles */}
-      <DecorativeCircles variant="scattered" />
+      <DecorativeCircles variant="bottom-right" />
 
       {/* Header */}
       <HeaderNavigation />
@@ -125,7 +125,7 @@ export default function SignUp() {
         showsVerticalScrollIndicator={false}
       >
         {/* Title */}
-        <View style={{ alignItems: "center", marginBottom: desktop ? 40 : 48 }}>
+        <View style={{ alignItems: "center", marginBottom: desktop ? 20 : 28 }}>
           <Text
             style={{
               color: COLORS.text.white,
@@ -138,30 +138,44 @@ export default function SignUp() {
           </Text>
         </View>
 
+        <View style={{ marginHorizontal: padding }}>
+          {/* Google Sign Up Button */}
+          <Button
+            title="Sign up with Google"
+            onPress={handleGoogleSignUp}
+            variant="secondary"
+            size="sm"
+            disabled={isLoading}
+            borderRadius={23}
+            icon={
+              <Image
+                source={require("../../assets/icons/Vector.png")}
+                style={{
+                  width: 18,
+                  height: 18,
+                  marginRight: 10,
+                }}
+                resizeMode="contain"
+              />
+            }
+          />
+
+          {/* Divider */}
+          <Divider lineMargin={13} />
+        </View>
+
         {/* Form Card - Menggunakan styling manual untuk mempertahankan tampilan yang sama */}
         <View
           style={{
             backgroundColor: COLORS.background.card,
             borderRadius: 24,
             padding: desktop ? padding * 1.5 : padding,
+            paddingHorizontal: desktop ? padding * 1.8 : padding * 1,
             marginHorizontal: padding,
             marginBottom: padding,
             ...SHADOWS.card,
           }}
         >
-          {/* Google Sign Up Button */}
-          <Button
-            title="Sign up with Google"
-            onPress={handleGoogleSignUp}
-            variant="secondary"
-            size="md"
-            className="mb-6"
-            disabled={isLoading}
-          />
-
-          {/* Divider */}
-          <Divider />
-
           {/* Input Fields - ✅ Fixed error display */}
           <Input
             label="Full Name"
@@ -170,6 +184,7 @@ export default function SignUp() {
             onBlur={() => setFieldTouched("fullName")}
             placeholder="Enter your full name"
             error={touched.fullName && errors.fullName}
+            backgroundColor={COLORS.background.input}
           />
 
           <Input
@@ -181,6 +196,7 @@ export default function SignUp() {
             keyboardType="email-address"
             autoCapitalize="none"
             error={touched.email && errors.email}
+            backgroundColor={COLORS.background.input}
           />
 
           <Input
@@ -191,6 +207,7 @@ export default function SignUp() {
             placeholder="Enter your phone number"
             keyboardType="phone-pad"
             error={touched.phoneNumber && errors.phoneNumber}
+            backgroundColor={COLORS.background.input}
           />
 
           <Input
@@ -202,6 +219,7 @@ export default function SignUp() {
             secureTextEntry={!showPassword}
             showPasswordToggle={true}
             error={touched.password && errors.password}
+            backgroundColor={COLORS.background.input}
           />
 
           <Input
@@ -212,18 +230,20 @@ export default function SignUp() {
             placeholder="Confirm your password"
             secureTextEntry={!showConfirmPassword}
             showPasswordToggle={true}
-            className="mb-8"
-            style={{ marginBottom: 32 }}
+            style={{ marginBottom: 23 }}
             error={touched.confirmPassword && errors.confirmPassword}
+            backgroundColor={COLORS.background.input}
           />
 
           {/* Create Account Button */}
           <Button
             title={isLoading ? "Creating Account..." : "Create Account"}
             onPress={handleCreateAccount}
-            variant="primary"
-            size="lg"
+            style={{ width: "90%", alignSelf: "center" }}
+            variant="signup"
+            size="sm"
             disabled={isLoading}
+            borderRadius={24}
           />
         </View>
 

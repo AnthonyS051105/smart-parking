@@ -70,13 +70,18 @@ export const COLORS = {
   },
   background: {
     card: "#FFFFFF",
-    input: "#F0FDFF",
+    input: "#E2E2E2",
     inputTeal: "#E6FFFA",
+    signupButton: "#2F6E77",
   },
   text: {
     primary: "#2D2B2E",
     secondary: "#6B7280",
     white: "#FFFFFF",
-    placeholder: "#9CA3AF",
+    placeholder: "#909090",
+    signup: "#093E47",
+  },
+  error: {
+    DEFAULT: "#EF4444",
   },
 };

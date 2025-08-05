@@ -35,6 +35,8 @@ export default function Input({
   autoCapitalize = "sentences",
   disabled = false,
   style = {},
+  backgroundColor = "rgba(255, 255, 255, 0.1)",
+  inputWidth,
   ...props
 }) {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
@@ -54,41 +56,45 @@ export default function Input({
   };
 
   const getContainerStyle = () => ({
-    marginBottom: getResponsivePadding(16),
+    marginBottom: getResponsivePadding(8),
     ...style,
   });
 
   const getLabelStyle = () => ({
     color: COLORS.text.secondary,
-    fontSize: getResponsiveFontSize(14),
-    fontFamily: "Poppins-Medium",
-    marginBottom: getResponsivePadding(8),
+    fontSize: getResponsiveFontSize(12),
+    fontFamily: "Poppins-SemiBold",
+    marginBottom: getResponsivePadding(2),
     marginLeft: getResponsivePadding(4),
   });
 
   const getInputContainerStyle = () => ({
-    backgroundColor: "rgba(255, 255, 255, 0.1)",
-    borderRadius: 20,
+    backgroundColor: backgroundColor,
+    borderRadius: 11,
     paddingHorizontal: getResponsivePadding(16),
-    paddingVertical: getResponsivePadding(12),
+    paddingVertical: getResponsivePadding(6), // Sesuaikan paddingVertical untuk pusatkan teks
     flexDirection: "row",
-    alignItems: "center",
+    alignItems: "center", // Pastikan alignItems tetap center
     borderWidth: 1,
     borderColor: error
       ? COLORS.error.DEFAULT
       : isFocused
-        ? COLORS.primary.light
+        ? COLORS.primary.dark
         : "rgba(255, 255, 255, 0.2)",
     opacity: disabled ? 0.5 : 1,
-    ...SHADOWS.button,
+    width: inputWidth,
+    height: 45, // Tetap gunakan height 48
+    justifyContent: "space-between", // Pastikan toggle button tidak mengganggu teks
   });
 
   const getInputStyle = () => ({
     flex: 1,
     color: COLORS.text.primary,
-    fontSize: getResponsiveFontSize(16),
+    fontSize: getResponsiveFontSize(12),
     fontFamily: "Poppins-Regular",
-    minHeight: 20,
+    textAlignVertical: "center", // Pastikan teks terpusat secara vertikal
+    paddingVertical: 0, // Hilangkan padding internal
+    includeFontPadding: false, // Hindari padding font bawaan
   });
 
   const getErrorStyle = () => ({
@@ -112,12 +118,13 @@ export default function Input({
           onFocus={handleFocus}
           onBlur={handleBlur}
           placeholder={placeholder}
-          placeholderTextColor="rgba(255, 255, 255, 0.5)"
+          placeholderTextColor="#A0A0A0" // Warna kontras untuk placeholder
           secureTextEntry={secureTextEntry && !isPasswordVisible}
           keyboardType={keyboardType}
           autoCapitalize={autoCapitalize}
           editable={!disabled}
           style={getInputStyle()}
+          multiline={false}
           {...props}
         />
 
@@ -126,7 +133,6 @@ export default function Input({
           <TouchableOpacity
             onPress={handlePasswordToggle}
             style={{
-              marginLeft: getResponsivePadding(12),
               padding: getResponsivePadding(4),
             }}
             disabled={disabled}
@@ -134,7 +140,7 @@ export default function Input({
             <Ionicons
               name={isPasswordVisible ? "eye-off" : "eye"}
               size={20}
-              color="rgba(255, 255, 255, 0.7)"
+              color="#2F6E77"
             />
           </TouchableOpacity>
         )}
