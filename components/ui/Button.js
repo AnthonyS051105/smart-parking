@@ -121,35 +121,38 @@ export default function Button({
         return {
           ...baseTextStyle,
           color: "#2D2B2E",
-          fontFamily: "Poppins-ExtraBold",
+          fontFamily: fontFamily || "Poppins-ExtraBold",
         };
       case "identity":
         return {
           ...baseTextStyle,
           color: "#2D2B2E",
-          fontFamily: "Poppins-Bold",
+          fontFamily: fontFamily || "Poppins-Bold",
         };
       case "secondary":
         return {
           ...baseTextStyle,
           color: COLORS.text.signup,
-          fontFamily: "Poppins-SemiBold",
+          fontFamily: fontFamily || "Poppins-SemiBold",
         };
       case "signup":
         return {
           ...baseTextStyle,
           color: COLORS.text.white,
-          fontFamily: "Poppins-ExtraBold",
+          fontFamily: fontFamily || "Poppins-ExtraBold",
         };
       case "outline":
       case "ghost":
         return {
           ...baseTextStyle,
           color: COLORS.text.white,
-          fontFamily: "Poppins-ExtraBold",
+          fontFamily: fontFamily || "Poppins-ExtraBold",
         };
       default:
-        return baseTextStyle;
+        return {
+          ...baseTextStyle,
+          fontFamily: fontFamily || "Poppins-Regular",
+        };
     }
   };
 

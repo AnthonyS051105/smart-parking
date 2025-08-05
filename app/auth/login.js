@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { View, Text, ScrollView, Alert } from "react-native";
+import { View, Text, ScrollView, Alert, Image } from "react-native";
 import { useRouter } from "expo-router";
 import { useAuth } from "../../contexts/AuthContext";
 import {
@@ -91,28 +91,60 @@ export default function LoginScreen() {
   return (
     <GradientBackground>
       {/* Decorative Circles */}
-      <DecorativeCircles variant="scattered" />
+      <DecorativeCircles variant="bottom-right" />
 
       {/* Header */}
       <HeaderNavigation />
 
       <ScrollView
         style={{ flex: 1 }}
-        contentContainerStyle={{ flexGrow: 1 }}
+        contentContainerStyle={{
+          flexGrow: 1,
+          justifyContent: "flex-start",
+          paddingTop: desktop ? 80 : 25,
+        }}
         showsVerticalScrollIndicator={false}
       >
         {/* Title */}
-        <View style={{ alignItems: "center", marginBottom: desktop ? 40 : 48 }}>
+        <View style={{ alignItems: "center", marginBottom: desktop ? 20 : 32 }}>
           <Text
+            className="text-center"
             style={{
               color: COLORS.text.white,
               fontSize: getResponsiveFontSize(40),
-              fontFamily: "Poppins-Bold",
+              fontFamily: "Poppins-ExtraBold",
+              lineHeight: getResponsiveFontSize(46),
               ...SHADOWS.textTitle,
             }}
           >
-            Sign In
+            Welcome{"\n"}Back
           </Text>
+        </View>
+
+        <View style={{ marginHorizontal: padding }}>
+          {/* Google Log In Button */}
+          <Button
+            title="Log in with Google"
+            onPress={handleGoogleLogin}
+            variant="secondary"
+            size="sm"
+            disabled={isLoading}
+            borderRadius={23}
+            icon={
+              <Image
+                source={require("../../assets/icons/Vector.png")}
+                style={{
+                  width: 18,
+                  height: 18,
+                  marginRight: 10,
+                }}
+                resizeMode="contain"
+              />
+            }
+          />
+
+          {/* Divider */}
+          <Divider lineMargin={13} />
         </View>
 
         {/* Form Card - Menggunakan styling manual untuk mempertahankan tampilan yang sama */}
@@ -121,25 +153,14 @@ export default function LoginScreen() {
             backgroundColor: COLORS.background.card,
             borderRadius: 24,
             padding: desktop ? padding * 1.5 : padding,
+            paddingHorizontal: desktop ? padding * 1.8 : padding * 1,
+            paddingTop: desktop ? padding * 2 : padding * 1.5,
             marginHorizontal: padding,
             marginBottom: padding,
             ...SHADOWS.card,
           }}
         >
-          {/* Google Login Button */}
-          <Button
-            title="Sign in with Google"
-            onPress={handleGoogleLogin}
-            variant="secondary"
-            size="md"
-            className="mb-6"
-            disabled={isLoading}
-          />
-
-          {/* Divider */}
-          <Divider />
-
-          {/* Input Fields */}
+          {/* Input Fields - ✅ Fixed error display */}
           <Input
             label="Email Address"
             value={values.email}
@@ -149,6 +170,7 @@ export default function LoginScreen() {
             keyboardType="email-address"
             autoCapitalize="none"
             error={touched.email && errors.email?.error}
+            backgroundColor={COLORS.background.input}
           />
 
           <Input
@@ -159,45 +181,60 @@ export default function LoginScreen() {
             placeholder="Enter your password"
             secureTextEntry={!showPassword}
             showPasswordToggle={true}
-            className="mb-4"
             error={touched.password && errors.password?.error}
+            backgroundColor={COLORS.background.input}
           />
 
-          {/* Forgot Password */}
-          <Button
-            title="Forgot Password?"
-            onPress={handleForgotPassword}
-            variant="ghost"
-            size="sm"
-            className="self-end mb-8 w-auto"
-            style={{
-              alignSelf: "flex-end",
-              marginBottom: 32,
-              width: "auto",
-            }}
-            textStyle={{ color: COLORS.text.secondary }}
-            disabled={isLoading}
-          />
+          {/* Forgot Password - Changed to clickable text */}
+          <View
+            style={{ alignItems: "flex-end", marginTop: 2, marginBottom: 20 }}
+          >
+            <Text
+              onPress={handleForgotPassword}
+              style={{
+                fontSize: getResponsiveFontSize(12),
+                fontFamily: "Poppins-Regular",
+                color: COLORS.text.secondary,
+                textDecorationLine: "underline",
+              }}
+            >
+              Forgot Password?
+            </Text>
+          </View>
 
           {/* Login Button */}
           <Button
             title={isLoading ? "Signing In..." : "Sign In"}
             onPress={handleLogin}
-            variant="primary"
-            size="lg"
-            className="mb-4"
+            style={{ width: "95%", alignSelf: "center" }}
+            variant="signup"
+            size="sm"
             disabled={isLoading}
+            borderRadius={24}
           />
 
-          {/* Create Account Link */}
-          <Button
-            title="Don't have an account? Create one"
-            onPress={handleCreateAccount}
-            variant="ghost"
-            size="md"
-            textStyle={{ color: COLORS.text.secondary }}
-            disabled={isLoading}
-          />
+          {/* Create Account Link - Changed to text with clickable part */}
+          <View style={{ alignItems: "center", marginTop: 16 }}>
+            <Text
+              style={{
+                fontSize: getResponsiveFontSize(12),
+                fontFamily: "Poppins-Regular",
+                color: COLORS.text.secondary,
+              }}
+            >
+              Don't have an account?{" "}
+              <Text
+                onPress={handleCreateAccount}
+                style={{
+                  color: COLORS.primary.dark,
+                  fontFamily: "Poppins-SemiBold",
+                  textDecorationLine: "underline",
+                }}
+              >
+                Create one
+              </Text>
+            </Text>
+          </View>
         </View>
 
         {/* Bottom spacer */}
