@@ -34,7 +34,7 @@ export default function SignUp() {
   const [isLoading, setIsLoading] = useState(false);
 
   const router = useRouter();
-  const { signup } = useAuth();
+  const { signup, loginWithGoogle } = useAuth();
   const padding = getResponsivePadding(22);
   const desktop = isDesktop();
 
@@ -107,8 +107,28 @@ export default function SignUp() {
     }
   };
 
-  const handleGoogleSignUp = () => {
-    console.log("Google Sign Up");
+  const handleGoogleSignUp = async () => {
+    setIsLoading(true);
+    try {
+      console.log("🔐 Starting Google signup...");
+      const result = await loginWithGoogle();
+
+      if (result.success) {
+        Alert.alert("Success", "Account created with Google successfully!", [
+          { text: "OK", onPress: () => router.replace("/") },
+        ]);
+      } else {
+        Alert.alert(
+          "Error",
+          result.error || "Google signup failed. Please try again."
+        );
+      }
+    } catch (error) {
+      console.error("Google signup error:", error);
+      Alert.alert("Error", "An unexpected error occurred. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

@@ -7,7 +7,7 @@ import {
   DecorativeCircles,
   HeaderNavigation,
   Logo,
-  CustomButton,
+  Button,
 } from "../components";
 import {
   getResponsivePadding,
@@ -110,7 +110,7 @@ export default function DashboardPage() {
             Account Actions
           </Text>
 
-          <CustomButton
+          <Button
             title="🚪 Logout & Test Login"
             onPress={handleLogout}
             variant="outline"
@@ -152,7 +152,7 @@ export default function DashboardPage() {
             Quick Actions
           </Text>
 
-          <CustomButton
+          <Button
             title="Find Parking Spot"
             onPress={() => console.log("Find parking")}
             variant="primary"
@@ -160,7 +160,7 @@ export default function DashboardPage() {
             containerStyle={{ marginBottom: 12 }}
           />
 
-          <CustomButton
+          <Button
             title="View My Bookings"
             onPress={() => console.log("View bookings")}
             variant="secondary"
@@ -168,7 +168,7 @@ export default function DashboardPage() {
             containerStyle={{ marginBottom: 12 }}
           />
 
-          <CustomButton
+          <Button
             title="Account Settings"
             onPress={() => console.log("Settings")}
             variant="outline"

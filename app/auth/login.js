@@ -27,7 +27,7 @@ export default function LoginScreen() {
   const [isLoading, setIsLoading] = useState(false);
 
   const router = useRouter();
-  const { login } = useAuth();
+  const { login, loginWithGoogle } = useAuth();
   const padding = getResponsivePadding(20);
   const desktop = isDesktop();
 
@@ -73,8 +73,28 @@ export default function LoginScreen() {
     }
   };
 
-  const handleGoogleLogin = () => {
-    console.log("Google Login");
+  const handleGoogleLogin = async () => {
+    setIsLoading(true);
+    try {
+      console.log("🔐 Starting Google login...");
+      const result = await loginWithGoogle();
+
+      if (result.success) {
+        Alert.alert("Success", "Logged in with Google successfully!", [
+          { text: "OK", onPress: () => router.replace("/") },
+        ]);
+      } else {
+        Alert.alert(
+          "Error",
+          result.error || "Google login failed. Please try again."
+        );
+      }
+    } catch (error) {
+      console.error("Google login error:", error);
+      Alert.alert("Error", "An unexpected error occurred. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleForgotPassword = () => {

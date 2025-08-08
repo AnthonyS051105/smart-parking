@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import API_CONFIG, { getApiUrl } from "../utils/api";
+import GoogleAuthService from "../services/GoogleAuthService";
 
 const AuthContext = createContext({});
 
@@ -176,9 +177,70 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const loginWithGoogle = async () => {
+    try {
+      setIsLoading(true);
+
+      console.log("🔐 Starting Google Sign-In...");
+
+      // Get Google user info
+      const googleResult = await GoogleAuthService.signIn();
+
+      if (!googleResult.success) {
+        console.log("❌ Google Sign-In failed:", googleResult.error);
+        return { success: false, error: googleResult.error };
+      }
+
+      console.log("✅ Google Sign-In successful, sending to backend...");
+
+      // Send Google token to your backend for verification
+      const response = await fetch(
+        getApiUrl(API_CONFIG.ENDPOINTS.GOOGLE_LOGIN),
+        {
+          method: "POST",
+          headers: API_CONFIG.HEADERS,
+          body: JSON.stringify({
+            idToken: googleResult.idToken,
+            user: googleResult.user,
+          }),
+          timeout: API_CONFIG.TIMEOUT,
+        }
+      );
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        // Save auth data
+        await AsyncStorage.setItem("authToken", data.token);
+        await AsyncStorage.setItem("userData", JSON.stringify(data.user));
+
+        setUser(data.user);
+        setIsAuthenticated(true);
+
+        console.log("✅ Google login successful for:", data.user.email);
+        return { success: true, user: data.user };
+      } else {
+        console.log("❌ Backend verification failed:", data.error);
+        return { success: false, error: data.error || "Google login failed" };
+      }
+    } catch (error) {
+      console.error("❌ Google login error:", error);
+      return {
+        success: false,
+        error: "Network error. Please check your connection.",
+      };
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const logout = async () => {
     try {
       setIsLoading(true);
+
+      // Sign out from Google as well
+      await GoogleAuthService.signOut();
+
       await clearAuthData();
       setUser(null);
       setIsAuthenticated(false);
@@ -230,6 +292,7 @@ export const AuthProvider = ({ children }) => {
     isAuthenticated,
     isLoading,
     login,
+    loginWithGoogle,
     signup,
     logout,
     getProfile,

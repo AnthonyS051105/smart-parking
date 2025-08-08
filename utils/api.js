@@ -2,7 +2,7 @@
 
 // ✅ Multiple IP addresses to try (in priority order)
 const POSSIBLE_BASE_URLS = [
-  "http://10.20.85.149:5000/api", // Primary network interface
+  "http://10.242.151.149:5000/api", // Primary network interface
   "http://localhost:5000/api", // Local fallback
   "http://127.0.0.1:5000/api", // Loopback fallback
   "http://192.168.122.1:5000/api", // Virtual interface
@@ -18,6 +18,7 @@ const API_CONFIG = {
   ENDPOINTS: {
     LOGIN: "/auth/login", // POST /api/auth/login
     SIGNUP: "/auth/signup", // POST /api/auth/signup
+    GOOGLE_LOGIN: "/auth/google", // POST /api/auth/google
     VERIFY_TOKEN: "/auth/verify", // POST /api/auth/verify
     PROFILE: "/auth/profile", // GET /api/auth/profile
     UPDATE_PROFILE: "/auth/profile", // PUT /api/auth/profile (future)
