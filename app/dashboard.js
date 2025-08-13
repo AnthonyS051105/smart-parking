@@ -1,313 +1,221 @@
-import React from "react";
-import { View, Text, ScrollView, Alert } from "react-native";
+import React, { useState, useCallback, useMemo, useRef } from "react";
+import { View, StatusBar, Alert, Text, TouchableOpacity } from "react-native";
 import { useRouter } from "expo-router";
 import { useAuth } from "../contexts/AuthContext";
+import { useLocation } from "../hooks/useLocation";
+import { useNavigation } from "../hooks/useNavigation";
+
+import MapboxMap from "../components/maps/MapboxMap";
+import SearchBar from "../components/dashboard/SearchBar";
+import DraggablePullUpPanel from "../components/dashboard/DraggablePullUpPanel";
+import BottomNavigation from "../components/dashboard/BottomNavigation";
+import LocationButton from "../components/dashboard/LocationButton";
+
 import {
-  GradientBackground,
-  DecorativeCircles,
-  HeaderNavigation,
-  Logo,
-  Button,
-} from "../components";
-import {
-  getResponsivePadding,
-  getResponsiveFontSize,
-} from "../utils/responsive";
-import { COLORS, SHADOWS } from "../utils/styles";
+  parkingSpots,
+  filterSpotsBySearch,
+  sortSpotsByDistance,
+} from "../data/parkingData";
+import { MAPBOX_CONFIG } from "../utils/mapboxConfig";
 
 export default function DashboardPage() {
-  const padding = getResponsivePadding(20);
   const router = useRouter();
   const { user, logout } = useAuth();
+  const { location: userLocation } = useLocation();
 
-  const handleLogout = () => {
-    Alert.alert("Logout", "Are you sure you want to logout?", [
-      {
-        text: "Cancel",
-        style: "cancel",
-      },
-      {
-        text: "Logout",
-        style: "destructive",
-        onPress: async () => {
-          console.log("🚪 Logging out user...");
-          await logout();
-          console.log("✅ Logout successful, redirecting to home");
-          router.replace("/");
-        },
-      },
-    ]);
-  };
+  const mapRef = useRef(null);
+  const [selectedSpotIndex, setSelectedSpotIndex] = useState(0);
+  const [searchText, setSearchText] = useState("");
+  const [activeTab, setActiveTab] = useState("parking");
+
+  const {
+    isNavigating,
+    route,
+    instructions,
+    currentStep,
+    startNavigation,
+    stopNavigation,
+    updateNavigationProgress,
+  } = useNavigation();
+
+  // Filter and sort parking spots
+  const filteredSpots = useMemo(() => {
+    let filtered = filterSpotsBySearch(parkingSpots, searchText);
+    return sortSpotsByDistance(filtered);
+  }, [searchText]);
+
+  // Prepare markers for map
+  const mapMarkers = useMemo(
+    () =>
+      filteredSpots.map((spot, index) => ({
+        ...spot,
+        selected: selectedSpotIndex === index,
+      })),
+    [filteredSpots, selectedSpotIndex]
+  );
+
+  // Handle spot selection
+  const handleSpotSelect = useCallback(
+    (index) => {
+      setSelectedSpotIndex(index);
+      const selectedSpot = filteredSpots[index];
+
+      // Move map to selected spot
+      mapRef.current?.animateToLocation(
+        selectedSpot.longitude,
+        selectedSpot.latitude,
+        MAPBOX_CONFIG.NAVIGATION_ZOOM
+      );
+    },
+    [filteredSpots]
+  );
+
+  // Handle marker press on map
+  const handleMarkerPress = useCallback(
+    (index, markerData) => {
+      handleSpotSelect(index);
+    },
+    [handleSpotSelect]
+  );
+
+  // Handle pull-up panel scroll
+  const handlePanelScroll = useCallback(
+    (index) => {
+      handleSpotSelect(index);
+    },
+    [handleSpotSelect]
+  );
+
+  // Handle my location button
+  const handleLocationPress = useCallback(() => {
+    if (userLocation) {
+      mapRef.current?.animateToLocation(
+        userLocation.longitude,
+        userLocation.latitude,
+        MAPBOX_CONFIG.DEFAULT_ZOOM
+      );
+    }
+  }, [userLocation]);
+
+  // Handle search
+  const handleSearch = useCallback(() => {
+    if (filteredSpots.length > 0) {
+      handleSpotSelect(0);
+    }
+  }, [filteredSpots, handleSpotSelect]);
+
+  // Handle navigation
+  const handleStartNavigation = useCallback(() => {
+    if (userLocation && filteredSpots[selectedSpotIndex]) {
+      const destination = {
+        latitude: filteredSpots[selectedSpotIndex].latitude,
+        longitude: filteredSpots[selectedSpotIndex].longitude,
+      };
+
+      startNavigation(userLocation, destination);
+    }
+  }, [userLocation, filteredSpots, selectedSpotIndex, startNavigation]);
+
+  // Handle tab press
+  const handleTabPress = useCallback(
+    (tabId) => {
+      setActiveTab(tabId);
+
+      switch (tabId) {
+        case "home":
+          router.push("/");
+          break;
+        case "favorite":
+          console.log("Navigate to Favorites");
+          break;
+        case "parking":
+          // Current screen
+          break;
+        case "history":
+          console.log("Navigate to History");
+          break;
+        case "profile":
+          Alert.alert("Profile Options", "Choose an action", [
+            { text: "Cancel", style: "cancel" },
+            {
+              text: "Logout",
+              style: "destructive",
+              onPress: async () => {
+                await logout();
+                router.replace("/");
+              },
+            },
+          ]);
+          break;
+      }
+    },
+    [router, logout]
+  );
 
   return (
-    <GradientBackground>
-      <DecorativeCircles variant="scattered" opacity={0.2} />
-
-      {/* ✅ Keep existing HeaderNavigation for debugging */}
-      <HeaderNavigation
-        title="Dashboard"
-        showBack={false}
-        rightAction={{
-          title: "Logout",
-          onPress: handleLogout,
-        }}
+    <View className="flex-1 bg-white">
+      <StatusBar
+        barStyle="light-content"
+        backgroundColor="transparent"
+        translucent
       />
 
-      <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={{ padding }}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* Welcome Section */}
-        <View style={{ alignItems: "center", marginBottom: 40 }}>
-          <Logo size="medium" />
+      {/* Map */}
+      <MapboxMap
+        ref={mapRef}
+        center={
+          userLocation
+            ? [userLocation.longitude, userLocation.latitude]
+            : MAPBOX_CONFIG.DEFAULT_CENTER
+        }
+        zoom={MAPBOX_CONFIG.DEFAULT_ZOOM}
+        markers={mapMarkers}
+        route={route}
+        onMarkerPress={handleMarkerPress}
+        followUser={isNavigating}
+        showUserLocation={true}
+        className="flex-1"
+      />
 
-          <Text
-            style={{
-              color: COLORS.text.white,
-              fontSize: getResponsiveFontSize(24),
-              fontFamily: "Poppins-Bold",
-              marginTop: 20,
-              textAlign: "center",
-              ...SHADOWS.text,
-            }}
-          >
-            Welcome back, {user?.fullName || user?.name || "User"}!
-          </Text>
+      {/* Search Bar */}
+      <SearchBar
+        value={searchText}
+        onChangeText={setSearchText}
+        onSearch={handleSearch}
+        placeholder="Search here"
+      />
 
-          <Text
-            style={{
-              color: COLORS.primary.text,
-              fontSize: getResponsiveFontSize(16),
-              fontFamily: "Poppins-Regular",
-              marginTop: 8,
-              textAlign: "center",
-              ...SHADOWS.text,
-            }}
-          >
-            Your smart parking solution
+      {/* My Location Button */}
+      <LocationButton onPress={handleLocationPress} />
+
+      {/* Navigation Instructions (when navigating) */}
+      {isNavigating && instructions[currentStep] && (
+        <View className="absolute top-32 left-5 right-5 bg-blue-600 rounded-xl p-4 shadow-lg z-30">
+          <Text className="text-white text-lg font-bold mb-1">
+            {instructions[currentStep].maneuver.instruction}
           </Text>
+          <Text className="text-blue-100 text-sm">
+            In {Math.round(instructions[currentStep].distance)}m
+          </Text>
+          <TouchableOpacity
+            className="absolute top-2 right-2 w-8 h-8 bg-white/20 rounded-full items-center justify-center"
+            onPress={stopNavigation}
+          >
+            <Text className="text-white font-bold">×</Text>
+          </TouchableOpacity>
         </View>
+      )}
 
-        {/* ✅ ADD: Manual Logout Button for testing */}
-        <View
-          style={{
-            backgroundColor: COLORS.background.card,
-            borderRadius: 20,
-            padding: padding * 1.5,
-            marginBottom: 20,
-            ...SHADOWS.card,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: getResponsiveFontSize(18),
-              fontFamily: "Poppins-Bold",
-              color: COLORS.text.primary,
-              marginBottom: 16,
-            }}
-          >
-            Account Actions
-          </Text>
+      {/* Draggable Pull-up Panel */}
+      <DraggablePullUpPanel
+        spots={filteredSpots}
+        selectedIndex={selectedSpotIndex}
+        onSpotSelect={handleSpotSelect}
+        onScroll={handlePanelScroll}
+      />
 
-          <Button
-            title="🚪 Logout & Test Login"
-            onPress={handleLogout}
-            variant="outline"
-            size="medium"
-            containerStyle={{ marginBottom: 12 }}
-          />
-
-          <Text
-            style={{
-              fontSize: getResponsiveFontSize(12),
-              fontFamily: "Poppins-Regular",
-              color: COLORS.text.secondary,
-              textAlign: "center",
-              marginTop: 8,
-            }}
-          >
-            Tap logout to test the login flow
-          </Text>
-        </View>
-
-        {/* Feature Cards */}
-        <View
-          style={{
-            backgroundColor: COLORS.background.card,
-            borderRadius: 20,
-            padding: padding * 1.5,
-            marginBottom: 20,
-            ...SHADOWS.card,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: getResponsiveFontSize(18),
-              fontFamily: "Poppins-Bold",
-              color: COLORS.text.primary,
-              marginBottom: 16,
-            }}
-          >
-            Quick Actions
-          </Text>
-
-          <Button
-            title="Find Parking Spot"
-            onPress={() => console.log("Find parking")}
-            variant="primary"
-            size="large"
-            containerStyle={{ marginBottom: 12 }}
-          />
-
-          <Button
-            title="View My Bookings"
-            onPress={() => console.log("View bookings")}
-            variant="secondary"
-            size="medium"
-            containerStyle={{ marginBottom: 12 }}
-          />
-
-          <Button
-            title="Account Settings"
-            onPress={() => console.log("Settings")}
-            variant="outline"
-            size="medium"
-          />
-        </View>
-
-        {/* Stats Card */}
-        <View
-          style={{
-            backgroundColor: COLORS.background.card,
-            borderRadius: 20,
-            padding: padding * 1.5,
-            marginBottom: 20,
-            ...SHADOWS.card,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: getResponsiveFontSize(18),
-              fontFamily: "Poppins-Bold",
-              color: COLORS.text.primary,
-              marginBottom: 16,
-            }}
-          >
-            Your Stats
-          </Text>
-
-          <View
-            style={{ flexDirection: "row", justifyContent: "space-between" }}
-          >
-            <View style={{ alignItems: "center", flex: 1 }}>
-              <Text
-                style={{
-                  fontSize: getResponsiveFontSize(24),
-                  fontFamily: "Poppins-Bold",
-                  color: COLORS.primary.dark,
-                }}
-              >
-                12
-              </Text>
-              <Text
-                style={{
-                  fontSize: getResponsiveFontSize(12),
-                  fontFamily: "Poppins-Regular",
-                  color: COLORS.text.secondary,
-                }}
-              >
-                Total Bookings
-              </Text>
-            </View>
-
-            <View style={{ alignItems: "center", flex: 1 }}>
-              <Text
-                style={{
-                  fontSize: getResponsiveFontSize(24),
-                  fontFamily: "Poppins-Bold",
-                  color: COLORS.primary.dark,
-                }}
-              >
-                3
-              </Text>
-              <Text
-                style={{
-                  fontSize: getResponsiveFontSize(12),
-                  fontFamily: "Poppins-Regular",
-                  color: COLORS.text.secondary,
-                }}
-              >
-                Active Bookings
-              </Text>
-            </View>
-
-            <View style={{ alignItems: "center", flex: 1 }}>
-              <Text
-                style={{
-                  fontSize: getResponsiveFontSize(24),
-                  fontFamily: "Poppins-Bold",
-                  color: COLORS.primary.dark,
-                }}
-              >
-                48h
-              </Text>
-              <Text
-                style={{
-                  fontSize: getResponsiveFontSize(12),
-                  fontFamily: "Poppins-Regular",
-                  color: COLORS.text.secondary,
-                }}
-              >
-                Total Hours
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        {/* ✅ ADD: Debug Info */}
-        <View
-          style={{
-            backgroundColor: COLORS.background.card,
-            borderRadius: 20,
-            padding: padding,
-            marginBottom: 20,
-            ...SHADOWS.card,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: getResponsiveFontSize(14),
-              fontFamily: "Poppins-Bold",
-              color: COLORS.text.primary,
-              marginBottom: 8,
-            }}
-          >
-            Debug Info
-          </Text>
-          <Text
-            style={{
-              fontSize: getResponsiveFontSize(12),
-              fontFamily: "Poppins-Regular",
-              color: COLORS.text.secondary,
-            }}
-          >
-            User: {user?.email || "No email"}
-          </Text>
-          <Text
-            style={{
-              fontSize: getResponsiveFontSize(12),
-              fontFamily: "Poppins-Regular",
-              color: COLORS.text.secondary,
-            }}
-          >
-            Name: {user?.fullName || "No name"}
-          </Text>
-        </View>
-
-        {/* Bottom spacer */}
-        <View style={{ height: 40 }} />
-      </ScrollView>
-    </GradientBackground>
+      {/* Bottom Navigation */}
+      <BottomNavigation activeTab={activeTab} onTabPress={handleTabPress} />
+    </View>
   );
 }

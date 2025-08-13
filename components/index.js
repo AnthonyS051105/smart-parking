@@ -14,3 +14,10 @@ export { default as LoadingSpinner } from "./ui/LoadingSpinner";
 // Layout Components
 export { default as GradientBackground } from "./layout/GradientBackground";
 export { default as DecorativeCircles } from "./layout/DecorativeCircles";
+
+export { default as MapboxMap } from "./maps/MapboxMap";
+export { default as SearchBar } from "./dashboard/SearchBar";
+export { default as ParkingSpotCard } from "./dashboard/ParkingSpotCard";
+export { default as DraggablePullUpPanel } from "./dashboard/DraggablePullUpPanel";
+export { default as BottomNavigation } from "./dashboard/BottomNavigation";
+export { default as LocationButton } from "./dashboard/LocationButton";
