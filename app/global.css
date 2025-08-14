@@ -1,3 +1,47 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss/base';
+@import 'tailwindcss/components';
+@import 'tailwindcss/utilities';
+
+/* Leaflet CSS for web platform */
+@import 'leaflet/dist/leaflet.css';
+
+/* Custom marker styles */
+.custom-marker {
+  background: transparent !important;
+  border: none !important;
+}
+
+/* Ensure map container has proper styling */
+.leaflet-container {
+  height: 100%;
+  width: 100%;
+}
+
+/* Navigation instructions styling */
+.navigation-instruction {
+  background: rgba(59, 130, 246, 0.95);
+  backdrop-filter: blur(10px);
+}
+
+/* Pull-up panel smooth transitions */
+.pull-up-panel {
+  transition: transform 0.3s ease-out;
+}
+
+/* Custom scrollbar for web */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #D1D5DB;
+  border-radius: 2px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #9CA3AF;
+}

@@ -1,106 +1,217 @@
-import { useState, useRef } from "react";
-import { mapboxDirectionsService } from "../services/mapboxService";
-import * as Speech from "expo-speech";
+import { useState, useEffect, useCallback, useRef } from 'react';
+import navigationService from '../services/navigationService';
 
 export const useNavigation = () => {
   const [isNavigating, setIsNavigating] = useState(false);
   const [route, setRoute] = useState(null);
-  const [currentStep, setCurrentStep] = useState(0);
   const [instructions, setInstructions] = useState([]);
-  const [eta, setEta] = useState(null);
-  const [distance, setDistance] = useState(null);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [voiceEnabled, setVoiceEnabled] = useState(true);
+  const [trafficInfo, setTrafficInfo] = useState(null);
+  const [navigationState, setNavigationState] = useState('idle'); // idle, calculating, navigating, completed
+  const unsubscribeRef = useRef(null);
 
-  const startNavigation = async (origin, destination) => {
-    try {
-      const routeData = await mapboxDirectionsService.getDirections(
-        origin,
-        destination
-      );
+  // Subscribe to navigation service updates
+  useEffect(() => {
+    const handleNavigationUpdate = (update) => {
+      switch (update.type) {
+        case 'navigation_started':
+          setIsNavigating(true);
+          setRoute(update.route);
+          setInstructions(update.instructions);
+          setCurrentStep(update.currentStep);
+          setNavigationState('navigating');
+          break;
 
-      setRoute(routeData.geometry);
-      setInstructions(routeData.steps);
-      setEta(routeData.duration);
-      setDistance(routeData.distance);
-      setCurrentStep(0);
-      setIsNavigating(true);
+        case 'navigation_stopped':
+          setIsNavigating(false);
+          setRoute(null);
+          setInstructions([]);
+          setCurrentStep(0);
+          setNavigationState('idle');
+          setTrafficInfo(null);
+          break;
 
-      // Announce first instruction
-      announceInstruction(routeData.steps[0]?.maneuver?.instruction);
-    } catch (error) {
-      console.error("Failed to start navigation:", error);
-    }
-  };
+        case 'step_advanced':
+          setCurrentStep(update.currentStep);
+          break;
 
-  const stopNavigation = () => {
-    setIsNavigating(false);
-    setRoute(null);
-    setInstructions([]);
-    setCurrentStep(0);
-    setEta(null);
-    setDistance(null);
-  };
+        case 'progress_updated':
+          // Update any progress-related state if needed
+          break;
 
-  const announceInstruction = (instruction) => {
-    if (instruction) {
-      Speech.speak(instruction, {
-        language: "id-ID", // Indonesian
-        pitch: 1.0,
-        rate: 0.8,
-      });
-    }
-  };
+        case 'navigation_completed':
+          setNavigationState('completed');
+          break;
 
-  const updateNavigationProgress = (userLocation) => {
-    if (!isNavigating || !instructions.length) return;
-
-    const nextStep = instructions[currentStep];
-    if (!nextStep) return;
-
-    const stepLocation = {
-      latitude: nextStep.maneuver.location[1],
-      longitude: nextStep.maneuver.location[0],
+        default:
+          break;
+      }
     };
 
-    const distance = calculateDistance(userLocation, stepLocation);
+    unsubscribeRef.current = navigationService.subscribe(handleNavigationUpdate);
 
-    // If within 30 meters of next instruction
-    if (distance < 30 && currentStep < instructions.length - 1) {
-      const newStep = currentStep + 1;
-      setCurrentStep(newStep);
-      announceInstruction(instructions[newStep]?.maneuver?.instruction);
+    // Initialize state from service
+    const state = navigationService.getNavigationState();
+    setIsNavigating(state.isNavigating);
+    setRoute(state.currentRoute);
+    setInstructions(state.instructions);
+    setCurrentStep(state.currentStep);
+    setVoiceEnabled(state.voiceEnabled);
+
+    return () => {
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current();
+      }
+    };
+  }, []);
+
+  // Start navigation
+  const startNavigation = useCallback(async (origin, destination, options = {}) => {
+    try {
+      setNavigationState('calculating');
+      
+      let selectedRoute;
+      if (options.optimize) {
+        // Get optimized routes
+        const routes = await navigationService.optimizeRoute(origin, destination, options);
+        selectedRoute = routes[0]; // Use the best route
+      } else {
+        selectedRoute = await navigationService.startNavigation(origin, destination);
+      }
+
+      // Simulate traffic info
+      const traffic = navigationService.simulateTraffic();
+      setTrafficInfo(traffic);
+
+      return selectedRoute;
+    } catch (error) {
+      setNavigationState('idle');
+      console.error('Failed to start navigation:', error);
+      throw error;
     }
+  }, []);
 
-    // Check if arrived
-    if (currentStep >= instructions.length - 1) {
-      announceInstruction("Anda telah sampai di tujuan");
-      stopNavigation();
+  // Stop navigation
+  const stopNavigation = useCallback(() => {
+    navigationService.stopNavigation();
+  }, []);
+
+  // Update navigation progress
+  const updateNavigationProgress = useCallback((currentLocation) => {
+    navigationService.updateProgress(currentLocation);
+  }, []);
+
+  // Toggle voice guidance
+  const toggleVoice = useCallback(() => {
+    const newVoiceState = navigationService.toggleVoice();
+    setVoiceEnabled(newVoiceState);
+    return newVoiceState;
+  }, []);
+
+  // Get route alternatives
+  const getRouteAlternatives = useCallback(async (origin, destination, options = {}) => {
+    try {
+      const routes = await navigationService.optimizeRoute(origin, destination, {
+        ...options,
+        alternatives: options.alternatives || 3
+      });
+      return routes;
+    } catch (error) {
+      console.error('Failed to get route alternatives:', error);
+      return [];
     }
-  };
+  }, []);
 
-  const calculateDistance = (point1, point2) => {
-    const R = 6371e3; // Earth's radius in meters
-    const φ1 = (point1.latitude * Math.PI) / 180;
-    const φ2 = (point2.latitude * Math.PI) / 180;
-    const Δφ = ((point2.latitude - point1.latitude) * Math.PI) / 180;
-    const Δλ = ((point2.longitude - point1.longitude) * Math.PI) / 180;
+  // Manually advance to next step (for testing)
+  const advanceStep = useCallback(() => {
+    navigationService.advanceToNextStep();
+  }, []);
 
-    const a =
-      Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
-      Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  // Get estimated arrival time
+  const getEstimatedArrival = useCallback(() => {
+    if (!route) return null;
 
-    return R * c;
-  };
+    const now = new Date();
+    const remainingDuration = instructions
+      .slice(currentStep)
+      .reduce((total, instruction) => total + instruction.duration, 0);
+
+    const trafficMultiplier = trafficInfo ? 
+      (trafficInfo.adjustedDuration / trafficInfo.originalDuration) : 1;
+
+    const adjustedDuration = remainingDuration * trafficMultiplier;
+    const arrivalTime = new Date(now.getTime() + adjustedDuration * 1000);
+
+    return {
+      estimatedArrival: arrivalTime,
+      remainingTime: adjustedDuration,
+      remainingDistance: instructions
+        .slice(currentStep)
+        .reduce((total, instruction) => total + instruction.distance, 0)
+    };
+  }, [route, instructions, currentStep, trafficInfo]);
+
+  // Format duration for display
+  const formatDuration = useCallback((seconds) => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    
+    if (hours > 0) {
+      return `${hours}h ${minutes}m`;
+    }
+    return `${minutes}m`;
+  }, []);
+
+  // Format distance for display
+  const formatDistance = useCallback((meters) => {
+    if (meters >= 1000) {
+      return `${(meters / 1000).toFixed(1)} km`;
+    }
+    return `${Math.round(meters)} m`;
+  }, []);
+
+  // Get current instruction
+  const getCurrentInstruction = useCallback(() => {
+    return instructions[currentStep] || null;
+  }, [instructions, currentStep]);
+
+  // Get next instruction
+  const getNextInstruction = useCallback(() => {
+    return instructions[currentStep + 1] || null;
+  }, [instructions, currentStep]);
+
+  // Check if navigation is active
+  const isNavigationActive = useCallback(() => {
+    return isNavigating && navigationState === 'navigating';
+  }, [isNavigating, navigationState]);
 
   return {
+    // State
     isNavigating,
     route,
-    currentStep,
     instructions,
-    eta,
-    distance,
+    currentStep,
+    voiceEnabled,
+    trafficInfo,
+    navigationState,
+
+    // Actions
     startNavigation,
     stopNavigation,
     updateNavigationProgress,
+    toggleVoice,
+    getRouteAlternatives,
+    advanceStep,
+
+    // Computed values
+    getCurrentInstruction,
+    getNextInstruction,
+    getEstimatedArrival,
+    isNavigationActive,
+
+    // Utilities
+    formatDuration,
+    formatDistance,
   };
 };
