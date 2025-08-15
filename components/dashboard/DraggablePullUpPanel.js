@@ -1,85 +1,41 @@
-import React, { useRef, useEffect } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import {
   View,
+  Text,
   ScrollView,
-  PanResponder,
-  Animated,
   Dimensions,
+  PanGestureHandler,
+  Animated,
 } from "react-native";
+import { Gesture, GestureDetector } from "react-native-gesture-handler";
 import ParkingSpotCard from "./ParkingSpotCard";
 
-const { height } = Dimensions.get("window");
-const PANEL_MIN_HEIGHT = 180;
-const PANEL_MAX_HEIGHT = height * 0.7;
+const { height: screenHeight } = Dimensions.get("window");
+const PANEL_HEIGHT = screenHeight * 0.6; // 60% of screen height
+const COLLAPSED_HEIGHT = 120; // Height when collapsed
+const SNAP_POINTS = [COLLAPSED_HEIGHT, PANEL_HEIGHT * 0.5, PANEL_HEIGHT]; // Collapsed, Half, Full
 
-const DraggablePullUpPanel = ({
+export default function DraggablePullUpPanel({
   spots = [],
   selectedIndex = 0,
   onSpotSelect,
   onScroll,
-  className = "",
-}) => {
-  const panelHeight = useRef(new Animated.Value(PANEL_MIN_HEIGHT)).current;
+  onStartNavigation,
+  isNavigating = false,
+  navigationState = 'idle',
+}) {
+  const [panelHeight, setPanelHeight] = useState(COLLAPSED_HEIGHT);
+  const [currentSnapPoint, setCurrentSnapPoint] = useState(0);
   const scrollViewRef = useRef(null);
+  const panelPosition = useRef(new Animated.Value(COLLAPSED_HEIGHT)).current;
+  const lastPanelHeight = useRef(COLLAPSED_HEIGHT);
 
-  // Pan gesture handler for dragging
-  const panResponder = useRef(
-    PanResponder.create({
-      onMoveShouldSetPanResponder: (evt, gestureState) => {
-        return Math.abs(gestureState.dy) > 10;
-      },
-
-      onPanResponderGrant: () => {
-        panelHeight.setOffset(panelHeight._value);
-        panelHeight.setValue(0);
-      },
-
-      onPanResponderMove: (evt, gestureState) => {
-        // Invert gesture (negative dy means swipe up)
-        panelHeight.setValue(-gestureState.dy);
-      },
-
-      onPanResponderRelease: (evt, gestureState) => {
-        panelHeight.flattenOffset();
-
-        const currentHeight = panelHeight._value;
-        let targetHeight;
-
-        // Determine target height based on gesture velocity and current position
-        if (
-          gestureState.vy < -0.5 ||
-          (gestureState.dy < -50 && currentHeight < PANEL_MAX_HEIGHT)
-        ) {
-          targetHeight = PANEL_MAX_HEIGHT; // Expand to full
-        } else if (
-          gestureState.vy > 0.5 ||
-          (gestureState.dy > 50 && currentHeight > PANEL_MIN_HEIGHT)
-        ) {
-          targetHeight = PANEL_MIN_HEIGHT; // Collapse to minimum
-        } else {
-          // Stay at current state
-          targetHeight =
-            currentHeight > (PANEL_MIN_HEIGHT + PANEL_MAX_HEIGHT) / 2
-              ? PANEL_MAX_HEIGHT
-              : PANEL_MIN_HEIGHT;
-        }
-
-        Animated.spring(panelHeight, {
-          toValue: targetHeight,
-          useNativeDriver: false,
-          tension: 100,
-          friction: 8,
-        }).start();
-      },
-    })
-  ).current;
-
-  // Auto-scroll to selected spot
+  // Auto-scroll to selected item when selectedIndex changes
   useEffect(() => {
     if (scrollViewRef.current && selectedIndex >= 0) {
-      const cardHeight = 120; // Approximate card height
+      const cardHeight = 100; // Approximate height of each card
       const scrollOffset = selectedIndex * cardHeight;
-
+      
       scrollViewRef.current.scrollTo({
         y: scrollOffset,
         animated: true,
@@ -87,60 +43,219 @@ const DraggablePullUpPanel = ({
     }
   }, [selectedIndex]);
 
-  const handleScroll = (event) => {
-    const offsetY = event.nativeEvent.contentOffset.y;
-    const cardHeight = 120;
-    const newIndex = Math.round(offsetY / cardHeight);
+  // Update panel height when animation value changes
+  useEffect(() => {
+    const listener = panelPosition.addListener(({ value }) => {
+      setPanelHeight(value);
+    });
 
-    if (
-      newIndex !== selectedIndex &&
-      newIndex >= 0 &&
-      newIndex < spots.length &&
-      onScroll
-    ) {
-      onScroll(newIndex);
-    }
-  };
+    return () => {
+      panelPosition.removeListener(listener);
+    };
+  }, [panelPosition]);
+
+  // Snap to nearest snap point
+  const snapToPoint = useCallback((targetHeight) => {
+    // Find closest snap point
+    let closestSnapPoint = 0;
+    let minDistance = Math.abs(targetHeight - SNAP_POINTS[0]);
+
+    SNAP_POINTS.forEach((point, index) => {
+      const distance = Math.abs(targetHeight - point);
+      if (distance < minDistance) {
+        minDistance = distance;
+        closestSnapPoint = index;
+      }
+    });
+
+    const targetSnapHeight = SNAP_POINTS[closestSnapPoint];
+    setCurrentSnapPoint(closestSnapPoint);
+
+    Animated.spring(panelPosition, {
+      toValue: targetSnapHeight,
+      useNativeDriver: false,
+      tension: 100,
+      friction: 8,
+    }).start();
+
+    lastPanelHeight.current = targetSnapHeight;
+  }, [panelPosition]);
+
+  // Pan gesture handler
+  const panGesture = Gesture.Pan()
+    .onStart(() => {
+      lastPanelHeight.current = panelHeight;
+    })
+    .onUpdate((event) => {
+      const newHeight = Math.max(
+        COLLAPSED_HEIGHT,
+        Math.min(PANEL_HEIGHT, lastPanelHeight.current - event.translationY)
+      );
+      panelPosition.setValue(newHeight);
+    })
+    .onEnd((event) => {
+      const velocityY = event.velocityY;
+      const currentHeight = panelHeight;
+      
+      // If moving fast, snap to next point in direction of movement
+      if (Math.abs(velocityY) > 500) {
+        if (velocityY < 0) {
+          // Moving up (expanding)
+          const nextPoint = Math.min(currentSnapPoint + 1, SNAP_POINTS.length - 1);
+          snapToPoint(SNAP_POINTS[nextPoint]);
+        } else {
+          // Moving down (collapsing)
+          const nextPoint = Math.max(currentSnapPoint - 1, 0);
+          snapToPoint(SNAP_POINTS[nextPoint]);
+        }
+      } else {
+        // Snap to nearest point
+        snapToPoint(currentHeight);
+      }
+    });
+
+  // Handle spot selection and notify parent
+  const handleSpotPress = useCallback(
+    (index, spot) => {
+      onSpotSelect?.(index);
+      
+      // Also trigger onScroll to update map
+      if (onScroll) {
+        onScroll(index);
+      }
+    },
+    [onSpotSelect, onScroll]
+  );
+
+  // Handle scroll events to sync with map
+  const handleScroll = useCallback(
+    (event) => {
+      if (!onScroll || spots.length === 0) return;
+
+      const cardHeight = 100; // Approximate height of each card
+      const scrollY = event.nativeEvent.contentOffset.y;
+      const index = Math.round(scrollY / cardHeight);
+      const clampedIndex = Math.max(0, Math.min(index, spots.length - 1));
+
+      // Only trigger if index actually changed
+      if (clampedIndex !== selectedIndex) {
+        onScroll(clampedIndex);
+      }
+    },
+    [onScroll, spots.length, selectedIndex]
+  );
+
+  // Render panel header
+  const renderHeader = () => (
+    <View className="bg-white rounded-t-3xl shadow-lg">
+      {/* Drag Handle */}
+      <View className="items-center py-3">
+        <View className="w-12 h-1 bg-gray-300 rounded-full" />
+      </View>
+
+      {/* Panel Title */}
+      <View className="px-6 pb-4">
+        <View className="flex-row items-center justify-between">
+          <View>
+            <Text className="text-xl font-bold text-gray-900">
+              Parking Spots
+            </Text>
+            <Text className="text-sm text-gray-500">
+              {spots.length} locations found
+            </Text>
+          </View>
+
+          {/* Navigation Status */}
+          {isNavigating && (
+            <View className="bg-blue-100 px-3 py-1 rounded-full">
+              <Text className="text-blue-600 text-sm font-medium">
+                {navigationState === 'calculating' ? 'Calculating...' : 'Navigating'}
+              </Text>
+            </View>
+          )}
+        </View>
+
+        {/* Filter/Sort Options */}
+        <View className="flex-row mt-3 space-x-2">
+          <View className="bg-gray-100 px-3 py-2 rounded-full flex-1">
+            <Text className="text-gray-600 text-sm text-center">
+              Nearest First
+            </Text>
+          </View>
+          <View className="bg-gray-100 px-3 py-2 rounded-full flex-1">
+            <Text className="text-gray-600 text-sm text-center">
+              Available
+            </Text>
+          </View>
+        </View>
+      </View>
+    </View>
+  );
+
+  // Render empty state
+  const renderEmptyState = () => (
+    <View className="flex-1 items-center justify-center py-12">
+      <Text className="text-gray-400 text-lg">🅿️</Text>
+      <Text className="text-gray-500 text-base mt-2">No parking spots found</Text>
+      <Text className="text-gray-400 text-sm mt-1">
+        Try adjusting your search or location
+      </Text>
+    </View>
+  );
 
   return (
     <Animated.View
-      className={`absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-2xl ${className}`}
       style={{
-        height: panelHeight,
-        minHeight: PANEL_MIN_HEIGHT,
-        maxHeight: PANEL_MAX_HEIGHT,
+        position: "absolute",
+        bottom: 0,
+        left: 0,
+        right: 0,
+        height: panelPosition,
+        zIndex: 20,
       }}
-      {...panResponder.panHandlers}
+      className="bg-transparent"
     >
-      {/* Handle Bar */}
-      <View className="w-12 h-1 bg-gray-300 rounded-full self-center mt-3 mb-4" />
-
-      {/* Content */}
-      <View className="flex-1 px-5">
-        <ScrollView
-          ref={scrollViewRef}
-          showsVerticalScrollIndicator={false}
-          onScroll={handleScroll}
-          scrollEventThrottle={16}
-          decelerationRate="fast"
-          snapToInterval={120} // Snap to each card
-        >
-          {spots.map((spot, index) => (
-            <ParkingSpotCard
-              key={spot.id}
-              spot={spot}
-              isSelected={selectedIndex === index}
-              onPress={() => onSpotSelect && onSpotSelect(index)}
-              className="mb-2"
-            />
-          ))}
-
-          {/* Bottom padding */}
-          <View className="h-20" />
-        </ScrollView>
-      </View>
+      <GestureDetector gesture={panGesture}>
+        <View className="flex-1">
+          {renderHeader()}
+          
+          {/* Content Area */}
+          <View className="flex-1 bg-white">
+            {spots.length === 0 ? (
+              renderEmptyState()
+            ) : (
+              <ScrollView
+                ref={scrollViewRef}
+                className="flex-1"
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{
+                  paddingHorizontal: 16,
+                  paddingBottom: 100, // Extra space at bottom
+                }}
+                onScroll={handleScroll}
+                scrollEventThrottle={100}
+                decelerationRate="fast"
+                snapToInterval={100} // Snap to each card
+                snapToAlignment="start"
+              >
+                {spots.map((spot, index) => (
+                  <View key={spot.id} style={{ marginBottom: 12 }}>
+                    <ParkingSpotCard
+                      spot={spot}
+                      isSelected={index === selectedIndex}
+                      onPress={() => handleSpotPress(index, spot)}
+                      onStartNavigation={() => onStartNavigation?.(index, spot)}
+                      isNavigating={isNavigating}
+                      navigationState={navigationState}
+                      showNavigationButton={index === selectedIndex}
+                    />
+                  </View>
+                ))}
+              </ScrollView>
+            )}
+          </View>
+        </View>
+      </GestureDetector>
     </Animated.View>
   );
-};
-
-export default DraggablePullUpPanel;
+}

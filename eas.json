@@ -1,6 +1,6 @@
 {
   "cli": {
-    "version": ">= 5.2.0",
+    "version": ">= 7.8.0",
     "appVersionSource": "remote"
   },
   "build": {
@@ -8,16 +8,10 @@
       "developmentClient": true,
       "distribution": "internal",
       "env": {
-        "MAPBOX_DOWNLOADS_TOKEN": "pk.eyJ1IjoiYW50aG9ueTA1IiwiYSI6ImNtZTQ3Y3F0MDAwMHEya29xMWUzcGVyNHcifQ.4CjdWQvtGe1YVYU-C8lR9Q",
-        "RNMapboxMapsDownloadToken": "pk.eyJ1IjoiYW50aG9ueTA1IiwiYSI6ImNtZTQ3Y3F0MDAwMHEya29xMWUzcGVyNHcifQ.4CjdWQvtGe1YVYU-C8lR9Q",
-        "NODE_ENV": "development"
+        "EXPO_USE_FAST_RESOLVER": "1"
       },
       "android": {
-        "gradleCommand": ":app:assembleDebug",
         "buildType": "apk"
-      },
-      "ios": {
-        "buildConfiguration": "Debug"
       }
     },
     "preview": {
@@ -27,6 +21,9 @@
       }
     },
     "production": {
+      "env": {
+        "EXPO_USE_FAST_RESOLVER": "1"
+      },
       "android": {
         "buildType": "apk"
       }
