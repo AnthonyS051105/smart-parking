@@ -5,9 +5,8 @@ import { useAuth } from "../contexts/AuthContext";
 import { useLocation } from "../hooks/useLocation";
 import { useNavigation } from "../hooks/useNavigation";
 
-// Import the new Leaflet map or fallback components
-import LeafletMap from "../components/maps/LeafletMap";
-import MapFallback from "../components/maps/MapFallback";
+// Import Mapbox map component
+import MapboxMap from "../components/maps/MapboxMap";
 import SearchBar from "../components/dashboard/SearchBar";
 import DraggablePullUpPanel from "../components/dashboard/DraggablePullUpPanel";
 import BottomNavigation from "../components/dashboard/BottomNavigation";
@@ -18,6 +17,7 @@ import {
   filterSpotsBySearch,
   sortSpotsByDistance,
 } from "../data/parkingData";
+import { MAPBOX_CONFIG } from "../utils/mapboxConfig";
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -76,7 +76,7 @@ export default function DashboardPage() {
         mapRef.current.animateToLocation(
           selectedSpot.longitude,
           selectedSpot.latitude,
-          16
+          MAPBOX_CONFIG.NAVIGATION_ZOOM
         );
       }
     },
@@ -86,7 +86,7 @@ export default function DashboardPage() {
   // Handle marker press on map
   const handleMarkerPress = useCallback(
     (index, markerData) => {
-      if (index !== null) {
+      if (index !== null && index !== undefined) {
         handleSpotSelect(index);
       }
     },
@@ -107,7 +107,7 @@ export default function DashboardPage() {
       mapRef.current.animateToLocation(
         userLocation.longitude,
         userLocation.latitude,
-        15
+        MAPBOX_CONFIG.LOCATION_ZOOM
       );
     }
   }, [userLocation]);
@@ -147,13 +147,13 @@ export default function DashboardPage() {
 
   // Handle route found from map
   const handleRouteFound = useCallback((foundRoute) => {
-    // Route found from Leaflet routing
+    // Route found from Mapbox routing
     console.log("Route found:", foundRoute);
   }, []);
 
   // Handle instructions change from map
   const handleInstructionsChange = useCallback((mapInstructions) => {
-    // Instructions from Leaflet routing
+    // Instructions from Mapbox routing
     console.log("Instructions updated:", mapInstructions);
   }, []);
 
@@ -204,9 +204,6 @@ export default function DashboardPage() {
   const currentInstruction = getCurrentInstruction();
   const estimatedArrival = getEstimatedArrival();
 
-  // Choose map component based on platform and availability
-  const MapComponent = Platform.OS === 'web' ? LeafletMap : MapFallback;
-
   return (
     <View className="flex-1 bg-white">
       <StatusBar
@@ -216,18 +213,14 @@ export default function DashboardPage() {
       />
 
       {/* Map */}
-      <MapComponent
+      <MapboxMap
         ref={mapRef}
         center={
           userLocation
-            ? Platform.OS === 'web' 
-              ? [userLocation.latitude, userLocation.longitude] // Leaflet format [lat, lng]
-              : [userLocation.longitude, userLocation.latitude] // Fallback format [lng, lat]
-            : Platform.OS === 'web'
-              ? [-6.2, 106.816666] // Jakarta [lat, lng]
-              : [106.816666, -6.2] // Jakarta [lng, lat]
+            ? [userLocation.longitude, userLocation.latitude] // Mapbox format [lng, lat]
+            : MAPBOX_CONFIG.DEFAULT_CENTER
         }
-        zoom={13}
+        zoom={MAPBOX_CONFIG.DEFAULT_ZOOM}
         markers={mapMarkers}
         route={route}
         waypoints={waypoints}
@@ -236,6 +229,7 @@ export default function DashboardPage() {
         onInstructionsChange={handleInstructionsChange}
         followUser={isNavigating}
         showUserLocation={true}
+        navigationMode={isNavigating}
         className="flex-1"
       />
 
@@ -315,11 +309,11 @@ export default function DashboardPage() {
                 </View>
 
                 {/* Traffic info */}
-                {trafficInfo && trafficInfo.condition !== 'light' && (
+                {trafficInfo && trafficInfo.condition !== 'light' && trafficInfo.condition !== 'unknown' && (
                   <View className="mt-3 p-2 bg-yellow-100 rounded-lg">
                     <Text className="text-yellow-800 text-sm">
-                      🚦 {trafficInfo.condition.charAt(0).toUpperCase() + trafficInfo.condition.slice(1)} traffic - 
-                      {trafficInfo.delayMinutes > 0 && ` +${trafficInfo.delayMinutes} min delay`}
+                      🚦 {trafficInfo.condition.charAt(0).toUpperCase() + trafficInfo.condition.slice(1)} traffic
+                      {trafficInfo.delayMinutes > 0 && ` - +${trafficInfo.delayMinutes} min delay`}
                     </Text>
                   </View>
                 )}

@@ -1,61 +1,67 @@
 {
   "expo": {
     "name": "SmartParking",
-    "slug": "SmartParking",
+    "slug": "smartparking",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icons/465abb021f7ccecbf70e8303bed15887815b29fb.png",
-    "userInterfaceStyle": "automatic",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
     "splash": {
-      "image": "./assets/icons/465abb021f7ccecbf70e8303bed15887815b29fb.png",
+      "image": "./assets/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.smartparking.app"
+      "bundleIdentifier": "com.smartparking.app",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "This app needs location access to show your position on the map and provide navigation.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "This app needs location access to show your position on the map and provide navigation.",
+        "NSCameraUsageDescription": "This app needs camera access for parking spot verification.",
+        "NSMicrophoneUsageDescription": "This app needs microphone access for voice commands during navigation."
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/icons/465abb021f7ccecbf70e8303bed15887815b29fb.png",
+        "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
       "package": "com.smartparking.app",
       "permissions": [
         "ACCESS_COARSE_LOCATION",
         "ACCESS_FINE_LOCATION",
-        "android.permission.ACCESS_COARSE_LOCATION",
-        "android.permission.ACCESS_FINE_LOCATION"
+        "ACCESS_BACKGROUND_LOCATION",
+        "CAMERA",
+        "RECORD_AUDIO"
       ]
     },
     "web": {
-      "bundler": "metro",
-      "entryPoint": "./src/app/App.js"
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
     },
-    "scheme": "smartparking",
     "plugins": [
-      "expo-font",
-      "expo-router",
-      "expo-dev-client",
       [
         "expo-location",
         {
-          "locationAlwaysAndWhenInUsePermission": "This app uses location to find nearby parking spots and provide navigation.",
-          "locationAlwaysPermission": "This app uses location to find nearby parking spots and provide navigation.",
-          "locationWhenInUsePermission": "This app uses location to find nearby parking spots and provide navigation."
+          "locationAlwaysAndWhenInUsePermission": "Allow Smart Parking to use your location to show your position on the map and provide navigation."
+        }
+      ],
+      [
+        "@rnmapbox/maps",
+        {
+          "RNMapboxMapsImpl": "mapbox",
+          "RNMapboxMapsDownloadToken": "pk.eyJ1IjoiYW50aG9ueTA1IiwiYSI6ImNtZTQ3Y3F0MDAwMHEya29xMWUzcGVyNHcifQ.4CjdWQvtGe1YVYU-C8lR9Q"
         }
       ]
     ],
+    "scheme": "smartparking",
     "extra": {
-      "googleSignIn": {
-        "webClientId": "956536297797-40t8l9ej41b1pqn7089929lc8iok2he4.apps.googleusercontent.com",
-        "androidClientId": "956536297797-b0cb77s0ke877edooae4702dacnk9p32.apps.googleusercontent.com",
-        "iosClientId": "956536297797-7rc1kpld9ljcdhkgmllhgp4urlqo5a9n.apps.googleusercontent.com"
-      },
-      "router": {},
       "eas": {
-        "projectId": "ccd5fca9-4c6f-4456-8f38-ba4ce81ee769"
+        "projectId": "your-project-id-here"
       }
     }
   }

@@ -2,21 +2,6 @@
 @import 'tailwindcss/components';
 @import 'tailwindcss/utilities';
 
-/* Leaflet CSS for web platform */
-@import 'leaflet/dist/leaflet.css';
-
-/* Custom marker styles */
-.custom-marker {
-  background: transparent !important;
-  border: none !important;
-}
-
-/* Ensure map container has proper styling */
-.leaflet-container {
-  height: 100%;
-  width: 100%;
-}
-
 /* Navigation instructions styling */
 .navigation-instruction {
   background: rgba(59, 130, 246, 0.95);
@@ -44,4 +29,26 @@
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #9CA3AF;
+}
+
+/* Mapbox GL specific styles */
+.mapboxgl-map {
+  font: 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
+}
+
+.mapboxgl-canvas-container {
+  cursor: grab;
+}
+
+.mapboxgl-canvas-container:active {
+  cursor: grabbing;
+}
+
+/* Hide Mapbox logo and attribution for clean look */
+.mapboxgl-ctrl-logo {
+  display: none !important;
+}
+
+.mapboxgl-ctrl-attrib {
+  display: none !important;
 }

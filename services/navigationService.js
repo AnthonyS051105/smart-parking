@@ -1,4 +1,5 @@
 import { Platform } from 'react-native';
+import { MAPBOX_CONFIG } from '../utils/mapboxConfig';
 
 class NavigationService {
   constructor() {
@@ -8,6 +9,23 @@ class NavigationService {
     this.instructions = [];
     this.voiceEnabled = true;
     this.listeners = [];
+    this.mapboxDirectionsClient = null;
+    
+    // Initialize Mapbox Directions API client if available
+    this.initializeMapboxDirections();
+  }
+
+  // Initialize Mapbox Directions API
+  async initializeMapboxDirections() {
+    try {
+      const mapboxSdk = require('@mapbox/mapbox-sdk');
+      const mapboxDirections = require('@mapbox/mapbox-sdk/services/directions');
+      
+      const mapboxClient = mapboxSdk({ accessToken: MAPBOX_CONFIG.ACCESS_TOKEN });
+      this.mapboxDirectionsClient = mapboxDirections(mapboxClient);
+    } catch (error) {
+      console.warn('Mapbox SDK not available, using fallback routing:', error);
+    }
   }
 
   // Subscribe to navigation updates
@@ -23,20 +41,36 @@ class NavigationService {
     this.listeners.forEach(listener => listener(update));
   }
 
-  // Calculate route between two points
-  async calculateRoute(origin, destination) {
-    try {
-      // Use OSRM (Open Source Routing Machine) API for route calculation
-      const url = `https://router.project-osrm.org/route/v1/driving/${origin.longitude},${origin.latitude};${destination.longitude},${destination.latitude}?steps=true&geometries=geojson&overview=full`;
-      
-      const response = await fetch(url);
-      const data = await response.json();
+  // Calculate route using Mapbox Directions API
+  async calculateRouteWithMapbox(origin, destination) {
+    if (!this.mapboxDirectionsClient) {
+      throw new Error('Mapbox Directions client not available');
+    }
 
-      if (data.routes && data.routes.length > 0) {
-        const route = data.routes[0];
+    try {
+      const response = await this.mapboxDirectionsClient.getDirections({
+        profile: 'driving-traffic', // Use traffic-aware routing
+        waypoints: [
+          {
+            coordinates: [origin.longitude, origin.latitude]
+          },
+          {
+            coordinates: [destination.longitude, destination.latitude]
+          }
+        ],
+        alternatives: true,
+        steps: true,
+        continue_straight: true,
+        annotations: ['duration', 'distance', 'speed'],
+        language: 'en',
+        overview: 'full',
+        geometries: 'geojson'
+      }).send();
+
+      if (response && response.body && response.body.routes && response.body.routes.length > 0) {
+        const route = response.body.routes[0];
         
-        // Transform route data
-        const transformedRoute = {
+        return {
           coordinates: route.geometry.coordinates,
           distance: route.distance,
           duration: route.duration,
@@ -46,18 +80,120 @@ class NavigationService {
             instruction: step.maneuver.instruction || this.generateInstruction(step.maneuver),
             maneuver: step.maneuver,
             geometry: step.geometry,
-            stepIndex: index
+            stepIndex: index,
+            name: step.name || '',
+            destinations: step.destinations || '',
+            exits: step.exits || '',
+            pronunciation: step.pronunciation || null
+          })),
+          // Additional Mapbox-specific data
+          traffic: this.extractTrafficInfo(route),
+          alternatives: response.body.routes.slice(1).map(alt => ({
+            coordinates: alt.geometry.coordinates,
+            distance: alt.distance,
+            duration: alt.duration,
+            traffic: this.extractTrafficInfo(alt)
           }))
         };
-
-        return transformedRoute;
       }
       
-      throw new Error('No route found');
+      throw new Error('No route found in Mapbox response');
     } catch (error) {
-      console.warn('Route calculation failed, using fallback:', error);
-      return this.generateFallbackRoute(origin, destination);
+      console.warn('Mapbox routing failed:', error);
+      throw error;
     }
+  }
+
+  // Extract traffic information from Mapbox route
+  extractTrafficInfo(route) {
+    if (!route.duration_traffic) {
+      return {
+        condition: 'unknown',
+        originalDuration: route.duration,
+        adjustedDuration: route.duration,
+        delayMinutes: 0
+      };
+    }
+
+    const trafficDuration = route.duration_traffic;
+    const normalDuration = route.duration;
+    const delaySeconds = trafficDuration - normalDuration;
+    const delayMinutes = Math.round(delaySeconds / 60);
+
+    let condition = 'light';
+    if (delaySeconds > 600) condition = 'severe'; // > 10 min delay
+    else if (delaySeconds > 300) condition = 'heavy'; // > 5 min delay
+    else if (delaySeconds > 120) condition = 'moderate'; // > 2 min delay
+
+    return {
+      condition,
+      originalDuration: normalDuration,
+      adjustedDuration: trafficDuration,
+      delayMinutes: Math.max(0, delayMinutes)
+    };
+  }
+
+  // Calculate route between two points (with Mapbox fallback to OSRM)
+  async calculateRoute(origin, destination) {
+    try {
+      // Try Mapbox first
+      return await this.calculateRouteWithMapbox(origin, destination);
+    } catch (error) {
+      console.warn('Mapbox routing failed, trying OSRM fallback:', error);
+      
+      // Fallback to OSRM
+      try {
+        const url = `https://router.project-osrm.org/route/v1/driving/${origin.longitude},${origin.latitude};${destination.longitude},${destination.latitude}?steps=true&geometries=geojson&overview=full`;
+        
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (data.routes && data.routes.length > 0) {
+          const route = data.routes[0];
+          
+          return {
+            coordinates: route.geometry.coordinates,
+            distance: route.distance,
+            duration: route.duration,
+            steps: route.legs[0].steps.map((step, index) => ({
+              distance: step.distance,
+              duration: step.duration,
+              instruction: step.maneuver.instruction || this.generateInstruction(step.maneuver),
+              maneuver: step.maneuver,
+              geometry: step.geometry,
+              stepIndex: index
+            })),
+            traffic: this.simulateTrafficForFallback(route.duration)
+          };
+        }
+        
+        throw new Error('No route found in OSRM response');
+      } catch (osrmError) {
+        console.warn('OSRM routing also failed:', osrmError);
+        return this.generateFallbackRoute(origin, destination);
+      }
+    }
+  }
+
+  // Simulate traffic for fallback routing
+  simulateTrafficForFallback(baseDuration) {
+    const trafficFactors = {
+      light: 1.0,
+      moderate: 1.2,
+      heavy: 1.5,
+      severe: 2.0
+    };
+
+    const conditions = Object.keys(trafficFactors);
+    const randomCondition = conditions[Math.floor(Math.random() * conditions.length)];
+    const adjustedDuration = baseDuration * trafficFactors[randomCondition];
+
+    return {
+      condition: randomCondition,
+      originalDuration: baseDuration,
+      adjustedDuration,
+      delayMinutes: Math.round((adjustedDuration - baseDuration) / 60)
+    };
   }
 
   // Generate fallback route for offline use
@@ -89,7 +225,13 @@ class NavigationService {
           geometry: { coordinates: [[destination.longitude, destination.latitude]] },
           stepIndex: 1
         }
-      ]
+      ],
+      traffic: {
+        condition: 'unknown',
+        originalDuration: (distance / 50) * 3600,
+        adjustedDuration: (distance / 50) * 3600,
+        delayMinutes: 0
+      }
     };
   }
 
@@ -113,7 +255,8 @@ class NavigationService {
         type: 'navigation_started',
         route,
         instructions: this.instructions,
-        currentStep: this.currentStep
+        currentStep: this.currentStep,
+        traffic: route.traffic
       });
 
       return route;
@@ -156,8 +299,8 @@ class NavigationService {
       }
     );
 
-    // If within 50 meters of next step, advance
-    if (distanceToNextStep < 0.05) { // 50 meters in km
+    // If within 30 meters of next step, advance (more precise for mobile)
+    if (distanceToNextStep < 0.03) { // 30 meters in km
       this.advanceToNextStep();
     }
 
@@ -289,8 +432,22 @@ class NavigationService {
         return `Take the ramp ${modifier || 'ahead'}`;
       case 'roundabout':
         return `Enter the roundabout and take the ${modifier || 'first'} exit`;
+      case 'rotary':
+        return `Enter the rotary and take the ${modifier || 'first'} exit`;
+      case 'roundabout turn':
+        return `At the roundabout, take the ${modifier || 'first'} exit`;
+      case 'notification':
+        return maneuver.instruction || 'Continue ahead';
+      case 'new name':
+        return `Continue onto ${maneuver.instruction || 'the road'}`;
+      case 'fork':
+        return `At the fork, keep ${modifier || 'straight'}`;
+      case 'end of road':
+        return `At the end of the road, turn ${modifier || 'ahead'}`;
+      case 'use lane':
+        return 'Use the indicated lane';
       default:
-        return `Continue ${modifier || 'ahead'}`;
+        return maneuver.instruction || `Continue ${modifier || 'ahead'}`;
     }
   }
 
@@ -310,77 +467,29 @@ class NavigationService {
       currentRoute: this.currentRoute,
       currentStep: this.currentStep,
       instructions: this.instructions,
-      voiceEnabled: this.voiceEnabled
+      voiceEnabled: this.voiceEnabled,
+      traffic: this.currentRoute?.traffic || null
     };
   }
 
-  // Simulate real-time traffic (for demo purposes)
-  simulateTraffic() {
-    if (!this.currentRoute) return null;
-
-    // Simulate traffic conditions
-    const trafficFactors = {
-      light: 1.0,
-      moderate: 1.3,
-      heavy: 1.8,
-      severe: 2.5
-    };
-
-    const conditions = Object.keys(trafficFactors);
-    const randomCondition = conditions[Math.floor(Math.random() * conditions.length)];
-    const adjustedDuration = this.currentRoute.duration * trafficFactors[randomCondition];
-
-    return {
-      condition: randomCondition,
-      originalDuration: this.currentRoute.duration,
-      adjustedDuration,
-      delayMinutes: Math.round((adjustedDuration - this.currentRoute.duration) / 60)
-    };
-  }
-
-  // Route optimization (find fastest route among alternatives)
+  // Route optimization using Mapbox alternatives
   async optimizeRoute(origin, destination, options = {}) {
     try {
-      // Calculate multiple route alternatives
-      const baseUrl = 'https://router.project-osrm.org/route/v1/driving';
-      const alternatives = options.alternatives || 3;
+      const route = await this.calculateRouteWithMapbox(origin, destination);
       
-      const url = `${baseUrl}/${origin.longitude},${origin.latitude};${destination.longitude},${destination.latitude}?alternatives=${alternatives}&steps=true&geometries=geojson&overview=full`;
+      // Return the best route plus alternatives
+      const routes = [route, ...(route.alternatives || [])];
       
-      const response = await fetch(url);
-      const data = await response.json();
-
-      if (data.routes && data.routes.length > 0) {
-        // Sort routes by duration (fastest first)
-        const sortedRoutes = data.routes
-          .map((route, index) => ({
-            ...route,
-            routeIndex: index,
-            score: this.calculateRouteScore(route, options)
-          }))
-          .sort((a, b) => a.score - b.score);
-
-        return sortedRoutes.map(route => ({
-          coordinates: route.geometry.coordinates,
-          distance: route.distance,
-          duration: route.duration,
-          routeIndex: route.routeIndex,
-          score: route.score,
-          steps: route.legs[0].steps.map((step, index) => ({
-            distance: step.distance,
-            duration: step.duration,
-            instruction: step.maneuver.instruction || this.generateInstruction(step.maneuver),
-            maneuver: step.maneuver,
-            geometry: step.geometry,
-            stepIndex: index
-          }))
-        }));
-      }
-
-      return [await this.calculateRoute(origin, destination)];
+      return routes.map((r, index) => ({
+        ...r,
+        routeIndex: index,
+        score: this.calculateRouteScore(r, options)
+      })).sort((a, b) => a.score - b.score);
+      
     } catch (error) {
-      console.warn('Route optimization failed:', error);
-      return [await this.calculateRoute(origin, destination)];
+      console.warn('Route optimization failed, using fallback:', error);
+      const fallbackRoute = await this.calculateRoute(origin, destination);
+      return [{ ...fallbackRoute, routeIndex: 0, score: 1 }];
     }
   }
 
@@ -389,20 +498,22 @@ class NavigationService {
     const weights = {
       duration: options.prioritizeTime ? 0.7 : 0.4,
       distance: options.prioritizeDistance ? 0.7 : 0.3,
-      complexity: 0.3 // Number of turns/complexity
+      traffic: 0.3
     };
 
-    const complexity = route.legs[0].steps.length;
+    // Use traffic-adjusted duration if available
+    const duration = route.traffic?.adjustedDuration || route.duration;
+    const trafficPenalty = route.traffic?.delayMinutes || 0;
     
     // Normalize values (lower is better)
-    const durationScore = route.duration / 3600; // Convert to hours
+    const durationScore = duration / 3600; // Convert to hours
     const distanceScore = route.distance / 1000; // Convert to km
-    const complexityScore = complexity / 20; // Normalize turn count
+    const trafficScore = trafficPenalty / 10; // Normalize delay
 
     return (
       durationScore * weights.duration +
       distanceScore * weights.distance +
-      complexityScore * weights.complexity
+      trafficScore * weights.traffic
     );
   }
 }
