@@ -58,11 +58,6 @@
         }
       ]
     ],
-    "scheme": "smartparking",
-    "extra": {
-      "eas": {
-        "projectId": "your-project-id-here"
-      }
-    }
+    "scheme": "smartparking"
   }
 }

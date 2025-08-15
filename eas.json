@@ -1,6 +1,7 @@
 {
   "cli": {
-    "version": ">= 7.8.0"
+    "version": ">= 7.8.0",
+    "appVersionSource": "remote"
   },
   "build": {
     "development": {
@@ -8,14 +9,23 @@
       "distribution": "internal",
       "env": {
         "EXPO_USE_FAST_RESOLVER": "1"
+      },
+      "android": {
+        "buildType": "apk"
       }
     },
     "preview": {
-      "distribution": "internal"
+      "distribution": "internal",
+      "android": {
+        "buildType": "apk"
+      }
     },
     "production": {
       "env": {
         "EXPO_USE_FAST_RESOLVER": "1"
+      },
+      "android": {
+        "buildType": "apk"
       }
     }
   },
